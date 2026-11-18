@@ -151,6 +151,21 @@
         
         .notes-text { color: var(--text-muted); font-size: 0.8rem; margin-top: 0.2rem; }
         .empty-state { text-align: center; padding: 3rem; color: var(--text-muted); }
+        .disputeBtn {
+            background: var(--bg-panel);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 2px 5px 3px 5px;
+            margin: 6px 0px 0px 0px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .disputeBtn:hover { border-color: var(--text-muted); }
     </style>
 </head>
 <body>
@@ -381,7 +396,7 @@
                             <strong>${escapeHtml(inc.penalty || 'No Further Action')}</strong>
                             ${inc.steward_notes ? `<div class="notes-text">${escapeHtml(inc.steward_notes)}</div>` : ''}
                         </td>
-                        <td><span class="status-badge ${statusClass}">${escapeHtml(inc.status)}</span></td>
+                        <td><span class="status-badge ${statusClass}">${escapeHtml(inc.status)}</span><br><a href="https://docs.google.com/forms/d/e/1FAIpQLSdmuyQarbT36JNXS22IJqOqF6BEyIZ_thCXB9nUCXPIA8x18A/viewform" target="_blank" class="disputeBtn">Dispute Result</a></td>
                     </tr>
                 `;
             }).join('');
