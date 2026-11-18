@@ -671,7 +671,7 @@
             const { data, error } = await supabaseClient
                 .from('stewarding_sessions')
                 .select('*')
-                .order('session_date', { ascending: false });
+                .order('session_date', { ascending: true });
 
             if (error) return console.error(error);
 
