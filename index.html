@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scottish Legends - Incident Reports</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-dark: #0b0d10;
+            --bg-panel: #14181f;
+            --bg-row: #1a2029;
+            --bg-input: #0e1116;
+            --border: #2a3241;
+            --accent-red: #e10600;
+            --accent-amber: #f59e0b;
+            --accent-green: #10b981;
+            --accent-blue: #3b82f6;
+            --accent-yellow: #ECE706;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.5;
+            padding: 1.5rem 1rem;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header {
+            border-bottom: 2px solid var(--accent-blue);
+            padding-bottom: 0.85rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        h1 { font-size: 1.5rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
+        h1 span { color: var(--accent-blue); }
+        .subtitle { color: var(--accent-yellow); font-size: 0.85rem; }
+        
+        /* Compact Cascading Controls Bar */
+        .controls-bar {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            display: grid;
+            grid-template-columns: 1fr 1.6fr 1fr;
+            gap: 1rem;
+            align-items: center;
+        }
+        @media (max-width: 900px) { .controls-bar { grid-template-columns: 1fr; } }
+
+        .control-group label {
+            display: block;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 0.35rem;
+            font-weight: 700;
+        }
+        select, input[type="text"] {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.55rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+        select:focus, input[type="text"]:focus { outline: none; border-color: var(--accent-blue); }
+
+        .session-header {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .session-header h2 { font-size: 1.15rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .meta-pills { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .pill {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .pill-category {
+            border-color: rgba(225, 6, 0, 0.5);
+            color: #ff8080;
+        }
+
+        .table-wrap {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th {
+            background: #101318;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.88rem; vertical-align: top; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: var(--bg-row); }
+
+        .car-badge {
+            display: inline-block;
+            background: #262e3d;
+            color: #fff;
+            font-weight: 700;
+            padding: 0.1rem 0.45rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            margin-right: 0.4rem;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .status-Penalty { background: rgba(225, 6, 0, 0.2); color: #ff6b6b; border: 1px solid rgba(225, 6, 0, 0.4); }
+        .status-Pending { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+        .status-NFA, .status-Cleared { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+        
+        .notes-text { color: var(--text-muted); font-size: 0.8rem; margin-top: 0.2rem; }
+        .empty-state { text-align: center; padding: 3rem; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1><span>//</span> Scottish Legends - Incident Reports</h1>
+                <p class="subtitle">Official Incident Reports & Post-Race Decisions</p>
+            </div>
+        </header>
+
+        <!-- Cascading Category & Session Controls -->
+        <div class="controls-bar">
+            <div class="control-group">
+                <label>1. Select Championship / Category</label>
+                <select id="categorySelect" onchange="onCategoryChange()">
+                    <option value="ALL">All Championships</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>2. Select Event Session</label>
+                <select id="sessionSelect" onchange="selectSession(this.value)">
+                    <option value="">-- Loading sessions --</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>3. Filter by Driver / Car #</label>
+                <input type="text" id="searchInput" placeholder="Type driver name or car #..." oninput="filterIncidents()">
+            </div>
+        </div>
+
+        <div id="sessionDetails"></div>
+        
+        <div id="incidentsContainer" class="table-wrap">
+            <div class="empty-state">Loading stewarding reports...</div>
+        </div>
+    </div>
+
+    <script>
+    	
+    	  const SUPABASE_URL = '__SUPABASE_URL_PLACEHOLDER__';
+        const SUPABASE_ANON_KEY = '__SUPABASE_ANON_KEY_PLACEHOLDER__';
+        
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let categories = [];
+        let allSessions = [];
+        let currentIncidents = [];
+        let currentSessionObj = null;
+
+        async function init() {
+            const [catRes, sessRes] = await Promise.all([
+                supabaseClient.from('stewarding_categories').select('*').order('name', { ascending: true }),
+                supabaseClient.from('stewarding_sessions').select('*').order('session_date', { ascending: false })
+            ]);
+
+            if (sessRes.error) {
+                document.getElementById('incidentsContainer').innerHTML = `<div class="empty-state">Error loading sessions: ${sessRes.error.message}</div>`;
+                return;
+            }
+
+            categories = catRes.data || [];
+            allSessions = sessRes.data || [];
+
+            populateCategoryDropdown();
+            onCategoryChange();
+        }
+
+        function populateCategoryDropdown() {
+            const catSelect = document.getElementById('categorySelect');
+            let optionsHtml = '<option value="ALL">All Championships</option>';
+            
+            categories.forEach(c => {
+                optionsHtml += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
+            });
+
+            // Only show "Other / Uncategorized" if there are sessions without a category assigned
+            const hasUncategorized = allSessions.some(s => !s.category_id);
+            if (hasUncategorized && categories.length > 0) {
+                optionsHtml += '<option value="UNCATEGORIZED">Other / Uncategorized</option>';
+            }
+
+            catSelect.innerHTML = optionsHtml;
+        }
+
+        function onCategoryChange() {
+            const selectedCatId = document.getElementById('categorySelect').value;
+            const sessionSelect = document.getElementById('sessionSelect');
+
+            let filteredSessions = allSessions;
+            if (selectedCatId === 'UNCATEGORIZED') {
+                filteredSessions = allSessions.filter(s => !s.category_id);
+            } else if (selectedCatId !== 'ALL') {
+                filteredSessions = allSessions.filter(s => s.category_id === selectedCatId);
+            }
+
+            if (filteredSessions.length === 0) {
+                sessionSelect.innerHTML = '<option value="">No sessions in this championship</option>';
+                document.getElementById('sessionDetails').innerHTML = '';
+                document.getElementById('incidentsContainer').innerHTML = `<div class="empty-state">No stewarding reports found for this category.</div>`;
+                currentIncidents = [];
+                return;
+            }
+
+            sessionSelect.innerHTML = filteredSessions.map(s => 
+                `<option value="${s.id}">Round ${escapeHtml(s.session_type)} - ${escapeHtml(s.track_name)} - ${s.session_date}</option>`
+            ).join('');
+
+            selectSession(filteredSessions[0].id);
+        }
+
+        async function selectSession(sessionId) {
+            currentSessionObj = allSessions.find(s => s.id === sessionId);
+            if (!currentSessionObj) return;
+
+            const catObj = categories.find(c => c.id === currentSessionObj.category_id);
+            const categoryPill = catObj 
+                ? `<span class="pill pill-category">${escapeHtml(catObj.name)}</span>` 
+                : '';
+
+            document.getElementById('sessionDetails').innerHTML = `
+                <div class="session-header">
+                    <div>
+                        <h2>INCIDENT REPORT</h2>
+                    </div>
+                    <div class="meta-pills">
+                        ${categoryPill}
+                        <span class="pill">${escapeHtml(currentSessionObj.track_name)}</span>
+                        <span class="pill">Round ${escapeHtml(currentSessionObj.session_type)}</span>
+                        <span class="pill">${escapeHtml(currentSessionObj.session_date)}</span>
+                    </div>
+                </div>
+            `;
+
+            const { data: incidents, error } = await supabaseClient
+                .from('stewarding_incidents')
+                .select('*')
+                .eq('session_id', sessionId);
+
+            if (error) {
+                document.getElementById('incidentsContainer').innerHTML = `<div class="empty-state">Error loading incidents.</div>`;
+                return;
+            }
+
+            currentIncidents = incidents || [];
+            currentIncidents.sort((a, b) => {
+                const parseSecs = (tStr) => {
+                    if (!tStr) return 0;
+                    const parts = tStr.split(':');
+                    if (parts.length !== 2) return 0;
+                    return (parseInt(parts[0]) || 0) * 60 + (parseFloat(parts[1]) || 0);
+                };
+                return parseSecs(a.session_time) - parseSecs(b.session_time);
+            });
+
+            // Re-apply active search filter if user already typed something
+            filterIncidents();
+        }
+
+        function filterIncidents() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            if (!query) {
+                renderIncidents(currentIncidents);
+                return;
+            }
+
+            const filtered = currentIncidents.filter(inc => {
+                const driver1 = (inc.driver_name || '').toLowerCase();
+                const driver2 = (inc.secondary_driver_name || '').toLowerCase();
+                const car1 = String(inc.car_number || '');
+                const car2 = String(inc.secondary_car_number || '');
+                const offence = (inc.reason || '').toLowerCase();
+
+                return driver1.includes(query) || driver2.includes(query) || 
+                       car1.includes(query) || car2.includes(query) || 
+                       offence.includes(query);
+            });
+
+            renderIncidents(filtered);
+        }
+
+        function renderIncidents(incidents) {
+            const container = document.getElementById('incidentsContainer');
+
+            if (!incidents || incidents.length === 0) {
+                container.innerHTML = `<div class="empty-state">No matching incidents found.</div>`;
+                return;
+            }
+
+            const rows = incidents.map(inc => {
+                const statusClass = inc.status.includes('Penalty') ? 'status-Penalty' : 
+                                    inc.status.includes('Pending') ? 'status-Pending' : 'status-NFA';
+                
+                const secondary = inc.secondary_driver_name || inc.secondary_car_number 
+                    ? `<div style="margin-top:3px; color:var(--text-muted); font-size:0.8rem;"><div style="padding-left:10px; margin-bottom:4px;">Vs</div> <span class="car-badge">#${inc.secondary_car_number ?? '?'}</span> ${escapeHtml(inc.secondary_driver_name || 'Unknown')}</div>` 
+                    : '';
+
+                return `
+                    <tr>
+                        <td><strong>${escapeHtml(inc.session_time || '-')}</strong><div class="notes-text">Lap ${inc.lap ?? '-'}</div></td>
+                        <td width="300">
+                            <div><span class="car-badge">#${inc.car_number ?? '?'}</span> <strong>${escapeHtml(inc.driver_name || 'Unknown')}</strong></div>
+                            ${secondary}
+                        </td>
+                        <td>${escapeHtml(inc.reason || '-')}</td>
+                        <td>
+                            <strong>${escapeHtml(inc.penalty || 'No Further Action')}</strong>
+                            ${inc.steward_notes ? `<div class="notes-text">${escapeHtml(inc.steward_notes)}</div>` : ''}
+                        </td>
+                        <td><span class="status-badge ${statusClass}">${escapeHtml(inc.status)}</span></td>
+                    </tr>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:95px;">Time / Lap</th>
+                            <th style="width:230px;">Involved Drivers</th>
+                            <th>Incident / Offence</th>
+                            <th>Steward Verdict & Notes</th>
+                            <th style="width:140px;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            `;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+        }
+
+        init();
+    </script>
+</body>
+</html>

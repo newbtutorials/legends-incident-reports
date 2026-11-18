@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steward Incident Manager - Admin</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-dark: #0b0d10;
+            --bg-panel: #14181f;
+            --bg-input: #0e1116;
+            --border: #2a3241;
+            --accent-red: #e10600;
+            --accent-green: #41BD22;
+            --accent-blue: #3b82f6;
+            --accent-yellow: #ECE706;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 1.5rem;
+        }
+        .container { max-width: 1800px; margin: 0 auto; }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--accent-red);
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        h1 { font-size: 1.5rem; text-transform: uppercase; letter-spacing: 1px; }
+        .header-actions { display: flex; gap: 0.75rem; }
+        h1 span { color: var(--accent-red); }
+        .subtitle { color: var(--accent-yellow); font-size: 0.85rem; }
+        
+        .btn {
+            background: var(--bg-panel);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 0.55rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .btn:hover { border-color: var(--text-muted); }
+        .btn-primary { background: var(--accent-red); border-color: var(--accent-red); color: #fff; }
+        .btn-primary:hover { background: #c20500; }
+        .btn-success { background: var(--accent-green); border-color: var(--accent-green); color: #052e16; }
+        .btn-danger { background: rgba(225, 6, 0, 0.15); border-color: var(--accent-red); color: #ff8080; }
+
+        .grid-top {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        @media (max-width: 900px) { .grid-top { grid-template-columns: 1fr; } }
+
+        .card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+        .card h2 { font-size: 1.1rem; margin-bottom: 1rem; text-transform: uppercase; color: var(--text-muted); }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.35rem; font-weight: 600; }
+        input, select, textarea {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.55rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent-blue); }
+
+        .category-bar {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .category-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .cat-pill {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            padding: 0.3rem 0.65rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .cat-pill button {
+            background: none;
+            border: none;
+            color: #ff8080;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+            line-height: 1;
+        }
+
+        .table-wrap {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th {
+            background: #101318;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            padding: 0.85rem;
+            border-bottom: 1px solid var(--border);
+        }
+        td { padding: 0.65rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+        td input, td select, td textarea { padding: 0.4rem 0.5rem; font-size: 0.85rem; }
+        
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background: var(--accent-green);
+            color: #052e16;
+            font-weight: 700;
+            padding: 0.85rem 1.25rem;
+            border-radius: 6px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            display: none;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div><h1><span>//</span> Steward Incident Manager - Admin</h1>
+            <p class="subtitle">Official Incident Reports & Post-Race Decisions</p>
+            </div>
+            <div class="header-actions">
+                <a href="index.html" target="_blank" class="btn">FrontEnd ↗</a>
+                <button onclick="logout()" class="btn btn-danger">Logout</button>
+            </div>
+        </header>
+
+        <!-- Categories Management Section -->
+        <div class="category-bar">
+            <div style="flex: 1; min-width: 280px;">
+                <h2 style="font-size: 0.95rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">Championship Categories</h2>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="newCategoryName" placeholder="e.g. GT3 Sprint Championship" onkeypress="if(event.key==='Enter') addCategory()">
+                    <button onclick="addCategory()" class="btn btn-success" style="white-space: nowrap;">+ Add Category</button>
+                </div>
+            </div>
+            <div style="flex: 2; min-width: 280px;">
+                <label>Active Categories (Click × to remove)</label>
+                <div id="categoryTagsList" class="category-tags">
+                    <span style="color: var(--text-muted); font-size: 0.85rem;">Loading categories...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-top">
+        	
+            <!-- Upload ACC JSON -->
+            <div class="card">
+                <h2>Upload ACC Race Control JSON</h2>
+                <div class="form-group">
+                    <label>Championship / Category</label>
+                    <select id="uploadCategorySelect">
+                        <option value="">-- Uncategorized --</option>
+                    </select>
+                </div>
+            
+               
+                    <div class="form-group">
+                        <label>Session Date (Race Date Auto-filled from JSON)</label>
+                        <input type="date" id="sessionDate" readonly>
+                    </div>
+          
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Track Name</label>
+                        <select id="trackName">
+                    		<option value="">-- Select Track --</option>
+                				</select>
+                    </div>
+                    <div class="form-group">
+                        <label>Race Number</label>
+                        <input type="number" id="sessionType" placeholder="e.g. 1">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Select ACC JSON File</label>
+                    <input type="file" id="jsonFile" accept=".json">
+                </div>
+                <button onclick="processAndUploadJson()" class="btn btn-primary">Upload Session</button>
+            </div>
+
+            <!-- Manage Existing Sessions -->
+            <div class="card">
+                <h2>Edit Session Details</h2>
+                <!-- Session Metadata Edit Form Fields -->
+                <div class="form-row">
+              
+                    <div class="form-group">
+                        <label>Edit Category</label>
+                        <select id="editSessionCategory">
+                            <option value="">-- Uncategorized --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Edit Track Name</label>
+                        <select id="editTrackName">
+                    		<option value="">-- Select Track --</option>
+                				</select>
+                    </div>
+                    <div class="form-group">
+                        <label>Edit Race Number</label>
+                        <input type="number" id="editSessionType">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Edit Session Date</label>
+                    <input type="date" id="editSessionDate">
+                </div>
+
+                <div style="display:flex; gap:0.75rem; margin-top:1rem; flex-wrap:wrap;">
+                    <button onclick="saveSessionDetails()" class="btn btn-success">Save Session Details</button>
+                    <button onclick="deleteCurrentSession()" class="btn btn-danger">Delete Session</button>
+                </div>
+            </div>
+            
+            </div> <!-- End Grid top -->
+            
+            <!-- Select Existing Sessions -->
+            <div class="card" style="padding-bottom:0px; margin-top:0px; margin-bottom:20px;">
+                <h2>Select Incident Report</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Filter by Category</label>
+                        <select id="filterCategorySelect" onchange="filterSessionDropdown()">
+                            <option value="ALL">All Categories</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Uploaded Sessions</label>
+                        <select id="sessionSelect" onchange="onSessionSelectChange(this.value)">
+                            <option value="">-- Loading sessions --</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            
+        
+
+        <!-- Incidents Editor Table -->
+        <div class="card" style="padding:0; overflow:hidden;">
+            <div style="padding:1.25rem; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+                <h2 style="margin:0;">Session Incidents & Steward Verdicts</h2>
+                <span><button onclick="showSummary()" class="btn">Show Summary</button></span>
+                <span><button onclick="addBlankIncident()" class="btn">+ Add Manual Incident</button></span>
+                <span id="incidentCount" style="color:var(--text-muted); font-size:0.85rem;">0 incidents</span>
+            </div>
+            <div class="table-wrap" style="border:none; border-radius:0;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:75px;">Lap</th>
+                            <th style="width:95px;">Time</th>
+                            <th style="width:210px;">Primary Car & Driver</th>
+                            <th style="width:210px;">Secondary Car & Driver</th>
+                            <th style="width:200px;">Reason / Offence</th>
+                            <th style="width:180px;">Penalty</th>
+                            <th>Steward Notes</th>
+                            <th style="width:155px;">Status</th>
+                            <th style="width:130px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="incidentsBody">
+                        <tr><td colspan="9" style="text-align:center; padding:2rem; color:var(--text-muted);">Select or upload a session to manage incidents.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">Saved!</div>
+
+    <script>
+    	  const SUPABASE_URL = '__SUPABASE_URL_PLACEHOLDER__';
+        const SUPABASE_ANON_KEY = '__SUPABASE_ANON_KEY_PLACEHOLDER__';
+       
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function verifyAuth() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                window.location.href = 'login.html';
+            }
+        }
+        verifyAuth();
+        
+        
+        const TRACK_NAMES = {
+            'Barcelona': 'Barcelona', 'Brands Hatch': 'Brands Hatch', 'COTA': 'COTA',
+            'Donington Park': 'Donington Park', 'Hungaroring': 'Hungaroring', 'Indianapolis': 'Indianapolis',
+            'Kyalami': 'Kyalami', 'Laguna Seca': 'Laguna Seca', 'Misano': 'Misano', 'Monza Circuit': 'Monza Circuit',
+            'Bathurst': 'Bathurst', 'Nürburgring': 'Nürburgring', 'Nordschleife': 'Nordschleife',
+            'Oulton Park': 'Oulton Park', 'Paul Ricard': 'Paul Ricard', 'Red Bull Ring': 'Red Bull Ring',
+            'Silverstone': 'Silverstone', 'Snetterton': 'Snetterton', 'Spa-Francorchamps': 'Spa-Francorchamps',
+            'Suzuka': 'Suzuka', 'Valencia': 'Valencia', 'Watkins Glen': 'Watkins Glen', 'Zandvoort': 'Zandvoort', 'Zolder': 'Zolder', 'Imola': 'Imola'
+        };
+
+        document.getElementById('sessionDate').valueAsDate = new Date();
+        let currentSessionId = null;
+        let sessionsCache = [];
+        let categoriesCache = [];
+
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'login.html';
+        }
+        
+        function populateTrackDropdowns() {
+            const selects = [document.getElementById('trackName'), document.getElementById('editTrackName')];
+            const sortedTracks = Object.entries(TRACK_NAMES).sort((a, b) => a[1].localeCompare(b[1]));
+
+            selects.forEach(select => {
+                if (!select) return;
+                const currentVal = select.value;
+                select.innerHTML = '<option value="">-- Select Track --</option>';
+                sortedTracks.forEach(([key, name]) => {
+                    const option = document.createElement('option');
+                    option.value = key;
+                    option.textContent = name;
+                    select.appendChild(option);
+                });
+                if (currentVal) select.value = currentVal;
+            });
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 2500);
+        }
+       
+
+        // --- CATEGORY MANAGEMENT ---
+        async function loadCategories() {
+            const { data, error } = await supabaseClient
+                .from('stewarding_categories')
+                .select('*')
+                .order('name', { ascending: true });
+
+            if (error) {
+                console.error('Error loading categories:', error);
+                return;
+            }
+
+            categoriesCache = data || [];
+            renderCategoryUI();
+        }
+
+        function renderCategoryUI() {
+            const tagsContainer = document.getElementById('categoryTagsList');
+            const uploadSelect = document.getElementById('uploadCategorySelect');
+            const filterSelect = document.getElementById('filterCategorySelect');
+            const editSelect = document.getElementById('editSessionCategory');
+
+            const currentFilterVal = filterSelect.value;
+
+            if (categoriesCache.length === 0) {
+                tagsContainer.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">No categories added yet.</span>';
+            } else {
+                tagsContainer.innerHTML = categoriesCache.map(c => `
+                    <span class="cat-pill">
+                        ${escapeHtml(c.name)}
+                        <button onclick="deleteCategory('${c.id}', '${escapeAttr(c.name)}')" title="Delete category">×</button>
+                    </span>
+                `).join('');
+            }
+
+            const baseOptions = '<option value="">-- Uncategorized --</option>' + 
+                categoriesCache.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+
+            uploadSelect.innerHTML = baseOptions;
+            editSelect.innerHTML = baseOptions;
+
+            filterSelect.innerHTML = '<option value="ALL">All Categories</option>' +
+                '<option value="UNCATEGORIZED">Uncategorized</option>' +
+                categoriesCache.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+
+            if (currentFilterVal) filterSelect.value = currentFilterVal;
+        }
+
+        async function addCategory() {
+            const input = document.getElementById('newCategoryName');
+            const name = input.value.trim();
+            if (!name) return alert('Please enter a category name.');
+
+            const { error } = await supabaseClient
+                .from('stewarding_categories')
+                .insert([{ name }]);
+
+            if (error) {
+                alert('Could not add category: ' + error.message);
+            } else {
+                input.value = '';
+                showToast('Category added!');
+                await loadCategories();
+            }
+        }
+
+        async function deleteCategory(id, name) {
+            if (!confirm(`Delete category "${name}"? Sessions in this category will become Uncategorized.`)) return;
+
+            const { error } = await supabaseClient
+                .from('stewarding_categories')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                alert('Error deleting category: ' + error.message);
+            } else {
+                showToast('Category deleted');
+                await loadCategories();
+                await loadSessionsList(currentSessionId);
+            }
+        }
+
+        // --- JSON FILE PARSING & UPLOAD ---
+        async function readAccJsonFile(file) {
+            const buffer = await file.arrayBuffer();
+            const bytes = new Uint8Array(buffer);
+            let text;
+            if (bytes[0] === 0xFF && bytes[1] === 0xFE) {
+                text = new TextDecoder('utf-16le').decode(buffer);
+            } else if (bytes[0] === 0xFE && bytes[1] === 0xFF) {
+                text = new TextDecoder('utf-16be').decode(buffer);
+            } else {
+                text = new TextDecoder('utf-8').decode(buffer);
+            }
+            text = text.replace(/\u0000/g, '').trim();
+            return JSON.parse(text);
+        }
+
+        document.getElementById('jsonFile').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const filenameMatch = file.name.match(/(\d{4}[-_]\d{2}[-_]\d{2})/);
+                if (filenameMatch) {
+                    const extractedDate = filenameMatch[1].replace(/_/g, '-');
+                    document.getElementById('sessionDate').value = extractedDate;
+                } else if (file.lastModified) {
+                    const modDate = new Date(file.lastModified).toISOString().split('T')[0];
+                    document.getElementById('sessionDate').value = modDate;
+                }
+
+                const json = await readAccJsonFile(file);
+                if (json.trackName) document.getElementById('trackName').value = json.trackName;
+                if (json.sessionType) document.getElementById('sessionType').value = json.sessionType;
+                
+               
+                
+            } catch (err) {
+                alert('Could not parse JSON preview: ' + err.message);
+            }
+        });
+
+        async function processAndUploadJson() {
+            const fileInput = document.getElementById('jsonFile');
+            if (!fileInput.files.length) return alert('Please select an ACC JSON file first.');
+
+            const categoryId = document.getElementById('uploadCategorySelect').value || null;
+            const trackName = document.getElementById('trackName').value.trim() || 'Unknown Track';
+            const sessionType = document.getElementById('sessionType').value.trim() || 'Race';
+            const sessionDate = document.getElementById('sessionDate').value;
+
+            try {
+                const json = await readAccJsonFile(fileInput.files[0]);
+
+                const carMap = {};
+                const lines = json.sessionResult?.leaderBoardLines || json.leaderBoardLines || json.result?.leaderBoardLines || [];
+                lines.forEach(line => {
+                    const carInfo = line.car || line;
+                    const carId = carInfo.carId !== undefined ? carInfo.carId : line.carId;
+                    const raceNumber = carInfo.raceNumber !== undefined ? carInfo.raceNumber : carInfo.carNumber;
+                    const drivers = carInfo.drivers || line.drivers || [];
+                    
+                    const driverNames = drivers.map(d => {
+                        const first = d.firstName || d.Firstname || '';
+                        const last = d.lastName || d.Lastname || '';
+                        return `${first} ${last}`.trim();
+                    }).filter(Boolean).join(' / ');
+
+                    if (carId !== undefined || raceNumber !== undefined) {
+                        if (carId !== undefined) carMap[carId] = { raceNumber: raceNumber ?? carId, driverName: driverNames || 'Unknown Driver' };
+                        if (raceNumber !== undefined) carMap[raceNumber] = { raceNumber, driverName: driverNames || 'Unknown Driver' };
+                    }
+                });
+
+                const rawIncidents = json.incidents || [];
+                
+                rawIncidents.forEach(inc => {
+                    const carsList = inc.cars || [];
+                    carsList.forEach(c => {
+                        const cId = c.id !== undefined ? c.id : c.carId;
+                        const cNum = c.carNumber !== undefined ? c.carNumber : c.car_number;
+                        const drivers = c.drivers || (c.driver ? [c.driver] : []);
+                        
+                        const driverNames = drivers.map(d => {
+                            const first = d.firstName || d.Firstname || '';
+                            const last = d.lastName || d.Lastname || '';
+                            return `${first} ${last}`.trim();
+                        }).filter(Boolean).join(' / ');
+
+                        if (cId !== undefined && (!carMap[cId] || carMap[cId].driverName === 'Unknown Driver')) {
+                            carMap[cId] = { raceNumber: cNum ?? cId, driverName: driverNames || 'Unknown Driver' };
+                        }
+                        if (cNum !== undefined && (!carMap[cNum] || carMap[cNum].driverName === 'Unknown Driver')) {
+                            carMap[cNum] = { raceNumber: cNum, driverName: driverNames || 'Unknown Driver' };
+                        }
+                    });
+                });
+
+                const { data: sessionData, error: sessionErr } = await supabaseClient
+                    .from('stewarding_sessions')
+                    .insert([{
+                        category_id: categoryId,
+                        track_name: trackName,
+                        session_type: sessionType,
+                        session_date: sessionDate
+                    }])
+                    .select()
+                    .single();
+
+                if (sessionErr) throw sessionErr;
+
+                const sortedIncidents = [...rawIncidents].sort((a, b) => (a.replayTime || 0) - (b.replayTime || 0));
+
+                const formattedIncidents = sortedIncidents.map(inc => {
+                    let formattedTime = '';
+                    const rTime = inc.replayTime || 0;
+                    if (typeof rTime === 'number') {
+                        const totalSec = Math.floor(rTime / 1000);
+                        const mins = Math.floor(totalSec / 60);
+                        const secs = String(totalSec % 60).padStart(2, '0');
+                        formattedTime = `${mins}:${secs}`;
+                    }
+
+                    const carsInInc = inc.cars || [];
+                    let primaryCarObj = carsInInc[0] || {};
+                    
+                    if (inc.yellowFlaggedCars && inc.yellowFlaggedCars.length > 0) {
+                        const flaggedId = inc.yellowFlaggedCars[0];
+                        const foundFlagged = carsInInc.find(c => c.id === flaggedId);
+                        if (foundFlagged) primaryCarObj = foundFlagged;
+                    }
+
+                    const primaryId = primaryCarObj.id !== undefined ? primaryCarObj.id : primaryCarObj.carId;
+                    const primaryNum = primaryCarObj.carNumber !== undefined ? primaryCarObj.carNumber : primaryCarObj.car_number;
+                    
+                    const primaryCarData = carMap[primaryId] || carMap[primaryNum] || { 
+                        raceNumber: primaryNum ?? primaryId ?? null, 
+                        driverName: (primaryCarObj.drivers || []).map(d => `${d.firstName || ''} ${d.lastName || ''}`.trim()).filter(Boolean).join(' / ') || 'Unknown Driver' 
+                    };
+
+                    let secondaryCarNum = null;
+                    let secondaryDriverName = '';
+                    
+                    const otherCars = carsInInc.filter(c => c.id !== primaryId && c.carNumber !== primaryNum);
+                    if (otherCars.length > 0) {
+                        const secCar = otherCars[0];
+                        secondaryCarNum = secCar.carNumber !== undefined ? secCar.carNumber : secCar.car_number;
+                        const secDrivers = secCar.drivers || [];
+                        secondaryDriverName = secDrivers.map(d => `${d.firstName || ''} ${d.lastName || ''}`.trim()).filter(Boolean).join(' / ');
+                    } else if (inc.yellowFlaggedCars && inc.yellowFlaggedCars.length > 1) {
+                        const secId = inc.yellowFlaggedCars.find(id => id !== primaryId);
+                        if (secId) {
+                            const secCarInfo = carMap[secId] || carsInInc.find(c => c.id === secId);
+                            if (secCarInfo) {
+                                secondaryCarNum = secCarInfo.raceNumber || secCarInfo.carNumber || null;
+                                secondaryDriverName = secCarInfo.driverName || '';
+                            }
+                        }
+                    }
+
+                    let offenceReason = '';
+                    if (inc.gameContact === false) offenceReason = '';
+
+                    let stewardNotes = '';
+                    if (secondaryCarNum) {
+                        stewardNotes = `Contact / Incident with Car #${secondaryCarNum}`;
+                    } else {
+                        stewardNotes = `Single car incident / off-track`;
+                    }
+
+                    return {
+                        session_id: sessionData.id,
+                        lap: null,
+                        session_time: formattedTime,
+                        car_number: primaryCarData.raceNumber ?? primaryNum ?? null,
+                        driver_name: primaryCarData.driverName || 'Unknown Driver',
+                        secondary_car_number: secondaryCarNum,
+                        secondary_driver_name: secondaryDriverName,
+                        reason: stewardNotes,
+                        penalty: 'No Further Action',
+                        steward_notes: offenceReason,
+                        status: 'Pending Review'
+                    };
+                });
+
+                if (formattedIncidents.length > 0) {
+                    const { error: incErr } = await supabaseClient
+                        .from('stewarding_incidents')
+                        .insert(formattedIncidents);
+                    if (incErr) throw incErr;
+                }
+
+                showToast(`Uploaded session with ${formattedIncidents.length} recorded incidents!`);
+                fileInput.value = '';
+                document.getElementById('filterCategorySelect').value = 'ALL';
+                await loadSessionsList(sessionData.id);
+            } catch (err) {
+                alert('Upload failed: ' + err.message);
+                console.error(err);
+            }
+        }
+
+        // --- SESSION LOADING & CASCADING FILTER ---
+        async function loadSessionsList(selectId = null) {
+            const { data, error } = await supabaseClient
+                .from('stewarding_sessions')
+                .select('*')
+                .order('session_date', { ascending: false });
+
+            if (error) return console.error(error);
+
+            sessionsCache = data || [];
+            filterSessionDropdown(selectId);
+        }
+
+        function filterSessionDropdown(preferredSessionId = null) {
+            const filterCat = document.getElementById('filterCategorySelect').value;
+            const select = document.getElementById('sessionSelect');
+
+            let filtered = sessionsCache;
+            if (filterCat === 'UNCATEGORIZED') {
+                filtered = sessionsCache.filter(s => !s.category_id);
+            } else if (filterCat !== 'ALL') {
+                filtered = sessionsCache.filter(s => s.category_id === filterCat);
+            }
+
+            if (!filtered.length) {
+                select.innerHTML = '<option value="">No sessions in this category</option>';
+                currentSessionId = null;
+                document.getElementById('editTrackName').value = '';
+                document.getElementById('editSessionType').value = '';
+                document.getElementById('editSessionDate').value = '';
+                document.getElementById('editSessionCategory').value = '';
+                document.getElementById('incidentsBody').innerHTML = '<tr><td colspan="9" style="text-align:center; padding:2rem; color:var(--text-muted);">No sessions available for this category.</td></tr>';
+                document.getElementById('incidentCount').textContent = '0 incidents';
+                return;
+            }
+
+            select.innerHTML = filtered.map(s => 
+                `<option value="${s.id}">Round ${s.session_type} - ${s.track_name} - ${s.session_date}</option>`
+            ).join('');
+
+            const targetId = (preferredSessionId && filtered.some(s => s.id === preferredSessionId))
+                ? preferredSessionId
+                : filtered[0].id;
+
+            select.value = targetId;
+            onSessionSelectChange(targetId);
+        }
+
+        function onSessionSelectChange(sessionId) {
+            currentSessionId = sessionId;
+            const sessionObj = sessionsCache.find(s => s.id === sessionId);
+            if (sessionObj) {
+                document.getElementById('editTrackName').value = sessionObj.track_name || '';
+                document.getElementById('editSessionType').value = sessionObj.session_type || '';
+                document.getElementById('editSessionDate').value = sessionObj.session_date || '';
+                document.getElementById('editSessionCategory').value = sessionObj.category_id || '';
+            }
+            loadSessionIncidents(sessionId);
+        }
+
+        async function saveSessionDetails() {
+            if (!currentSessionId) return alert('No session selected.');
+
+            const updatedData = {
+                category_id: document.getElementById('editSessionCategory').value || null,
+                track_name: document.getElementById('editTrackName').value.trim(),
+                session_type: document.getElementById('editSessionType').value.trim(),
+                session_date: document.getElementById('editSessionDate').value
+            };
+
+            const { error } = await supabaseClient
+                .from('stewarding_sessions')
+                .update(updatedData)
+                .eq('id', currentSessionId);
+
+            if (error) {
+                alert('Error updating session: ' + error.message);
+            } else {
+                showToast('Session details updated!');
+                await loadSessionsList(currentSessionId);
+            }
+        }
+
+        async function loadSessionIncidents(sessionId) {
+            if (!sessionId) return;
+
+            const { data, error } = await supabaseClient
+                .from('stewarding_incidents')
+                .select('*')
+                .eq('session_id', sessionId);
+
+            if (error) return alert(error.message);
+
+            data.sort((a, b) => {
+                const parseSecs = (tStr) => {
+                    if (!tStr) return 0;
+                    const parts = tStr.split(':');
+                    if (parts.length !== 2) return 0;
+                    return (parseInt(parts[0]) || 0) * 60 + (parseFloat(parts[1]) || 0);
+                };
+                return parseSecs(a.session_time) - parseSecs(b.session_time);
+            });
+
+            document.getElementById('incidentCount').textContent = `${data.length} incident(s)`;
+            const tbody = document.getElementById('incidentsBody');
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:2rem; color:var(--text-muted);">No incidents in this session. Click "+ Add Manual Incident" above to add one.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(inc => `
+                <tr id="row-${inc.id}">
+                    <td><input type="number" id="lap-${inc.id}" value="${inc.lap ?? ''}" placeholder="Lap"></td>
+                    <td><input type="text" id="time-${inc.id}" value="${escapeAttr(inc.session_time)}"></td>
+                    <td>
+                        <input type="number" id="car1-${inc.id}" placeholder="Car #" value="${inc.car_number ?? ''}" style="margin-bottom:4px;">
+                        <input type="text" id="drv1-${inc.id}" placeholder="Driver Name" value="${escapeAttr(inc.driver_name)}">
+                    </td>
+                    <td>
+                        <input type="number" id="car2-${inc.id}" placeholder="Car # (opt)" value="${inc.secondary_car_number ?? ''}" style="margin-bottom:4px;">
+                        <input type="text" id="drv2-${inc.id}" placeholder="Driver 2 (opt)" value="${escapeAttr(inc.secondary_driver_name)}">
+                    </td>
+                    <td><input type="text" id="reason-${inc.id}" value="${escapeAttr(inc.reason)}"></td>
+                    <td><select id="penalty-${inc.id}">
+                            <option value="${escapeAttr(inc.penalty)}">${escapeAttr(inc.penalty)}</option>
+                            <option value="5 Seconds">5 Seconds</option>
+                            <option value="10 Seconds">10 Seconds</option>
+                            <option value="15 Seconds">15 Seconds</option>
+                            <option value="20 Seconds">20 Seconds</option>
+                            <option value="25 Seconds">25 Seconds</option>
+                            <option value="30 Seconds">30 Seconds</option>
+                            <option value="35 Seconds">35 Seconds</option>
+                            <option value="40 Seconds">40 Seconds</option>
+                            <option value="45 Seconds">45 Seconds</option>
+                            <option value="50 Seconds">50 Seconds</option>
+                            <option value="55 Seconds">55 Seconds</option>
+                            <option value="60 Seconds">60 Seconds</option>
+                            <option value="Disqualified">Disqualified</option>
+                            <option value="Under Investigation">Under Investigation</option>
+
+                    </select></td>
+                    <td><textarea id="notes-${inc.id}" rows="4">${escapeHtml(inc.steward_notes)}</textarea></td>
+                    <td>
+                        <select id="status-${inc.id}">
+                            <option value="Pending Review" ${inc.status === 'Pending Review' ? 'selected' : ''}>Pending Review</option>
+                            <option value="Penalty Applied" ${inc.status === 'Penalty Applied' ? 'selected' : ''}>Penalty Applied</option>
+                            <option value="No Further Action" ${inc.status === 'No Further Action' ? 'selected' : ''}>No Further Action</option>
+                            <option value="Cleared" ${inc.status === 'Cleared' ? 'selected' : ''}>Cleared</option>
+                        </select>
+                    </td>
+                    <td>
+                        <button onclick="saveIncident('${inc.id}')" class="btn btn-success" style="width:100%; margin-bottom:4px; justify-content:center;">Save</button>
+                        <button onclick="deleteIncident('${inc.id}')" class="btn btn-danger" style="width:100%; justify-content:center;">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function saveIncident(id) {
+            const payload = {
+                lap: parseInt(document.getElementById(`lap-${id}`).value) || null,
+                session_time: document.getElementById(`time-${id}`).value.trim(),
+                car_number: parseInt(document.getElementById(`car1-${id}`).value) || null,
+                driver_name: document.getElementById(`drv1-${id}`).value.trim(),
+                secondary_car_number: parseInt(document.getElementById(`car2-${id}`).value) || null,
+                secondary_driver_name: document.getElementById(`drv2-${id}`).value.trim(),
+                reason: document.getElementById(`reason-${id}`).value.trim(),
+                penalty: document.getElementById(`penalty-${id}`).value.trim(),
+                steward_notes: document.getElementById(`notes-${id}`).value.trim(),
+                status: document.getElementById(`status-${id}`).value
+            };
+
+            const { error } = await supabaseClient
+                .from('stewarding_incidents')
+                .update(payload)
+                .eq('id', id);
+
+            if (error) {
+                alert('Error saving: ' + error.message);
+            } else {
+                showToast('Incident updated!');
+            }
+        }
+
+        async function addBlankIncident() {
+            if (!currentSessionId) return alert('Select a session first.');
+            const { error } = await supabaseClient
+                .from('stewarding_incidents')
+                .insert([{
+                    session_id: currentSessionId,
+                    lap: null,
+                    reason: 'Contact / Incident',
+                    penalty: 'No Further Action',
+                    status: 'Pending Review'
+                }]);
+
+            if (error) alert(error.message);
+            else {
+                showToast('Added new incident row');
+                loadSessionIncidents(currentSessionId);
+            }
+        }
+
+        async function deleteIncident(id) {
+            if (!confirm('Delete this incident?')) return;
+            const { error } = await supabaseClient
+                .from('stewarding_incidents')
+                .delete()
+                .eq('id', id);
+
+            if (error) alert(error.message);
+            else {
+                document.getElementById(`row-${id}`)?.remove();
+                showToast('Incident deleted');
+            }
+        }
+
+        async function deleteCurrentSession() {
+            if (!currentSessionId) return;
+            if (!confirm('Delete this entire session and ALL its incidents?')) return;
+
+            const { error } = await supabaseClient
+                .from('stewarding_sessions')
+                .delete()
+                .eq('id', currentSessionId);
+
+            if (error) alert(error.message);
+            else {
+                showToast('Session deleted');
+                currentSessionId = null;
+                loadSessionsList();
+            }
+        }
+
+        function escapeAttr(str) {
+            if (!str) return '';
+            return String(str).replace(/"/g, '&quot;');
+        }
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+        }
+
+        async function init() {
+            await loadCategories();
+            await loadSessionsList();
+            await populateTrackDropdowns();
+        }
+        init();
+    </script>
+</body>
+</html>
