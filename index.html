@@ -204,7 +204,7 @@
         async function init() {
             const [catRes, sessRes] = await Promise.all([
                 supabaseClient.from('stewarding_categories').select('*').order('name', { ascending: true }),
-                supabaseClient.from('stewarding_sessions').select('*').order('session_date', { ascending: false })
+                supabaseClient.from('stewarding_sessions').select('*').order('session_date', { ascending: true })
             ]);
 
             if (sessRes.error) {
@@ -288,8 +288,7 @@
             const { data: incidents, error } = await supabaseClient
                 .from('stewarding_incidents')
                 .select('*')
-                .eq('session_id', sessionId)
-                .order('session_date', { ascending: true });
+                .eq('session_id', sessionId);
 
             if (error) {
                 document.getElementById('incidentsContainer').innerHTML = `<div class="empty-state">Error loading incidents.</div>`;
