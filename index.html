@@ -289,6 +289,7 @@
                 .from('stewarding_incidents')
                 .select('*')
                 .eq('session_id', sessionId);
+                .order('session_date', { ascending: true });
 
             if (error) {
                 document.getElementById('incidentsContainer').innerHTML = `<div class="empty-state">Error loading incidents.</div>`;
