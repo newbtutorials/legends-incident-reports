@@ -267,6 +267,31 @@
             
             </div> <!-- End Grid top -->
             
+            <!-- Summary Card (Appears above Select Incident Report when Show Summary is clicked) -->
+            <div id="summaryCard" class="card" style="display: none; margin-bottom: 20px; border-color: var(--accent-blue);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2 style="margin: 0;">Session Penalties Summary</h2>
+                    <div style="display: flex; gap: 0.75rem;">
+                        <button onclick="exportSummaryCsv()" class="btn btn-success">Export to Spreadsheet (CSV)</button>
+                        <button onclick="closeSummary()" class="btn btn-danger">Close</button>
+                    </div>
+                </div>
+                <div class="table-wrap" style="border: 1px solid var(--border); border-radius: 6px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Driver Name</th>
+                                <th>Penalty</th>
+                                <th>Session Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summaryTableBody">
+                            <tr><td colspan="3" style="text-align:center; padding:1.5rem; color:var(--text-muted);">No penalties applied.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- Select Existing Sessions -->
             <div class="card" style="padding-bottom:0px; margin-top:0px; margin-bottom:20px;">
                 <h2>Select Incident Report</h2>
@@ -293,7 +318,7 @@
         <div class="card" style="padding:0; overflow:hidden;">
             <div style="padding:1.25rem; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
                 <h2 style="margin:0;">Session Incidents & Steward Verdicts</h2>
-                <span><button onclick="showSummary()" class="btn">Show Summary</button></span>
+                <span><button id="showSummary" onclick="showSummary()" class="btn">Show Summary</button></span>
                 <span><button onclick="addBlankIncident()" class="btn">+ Add Manual Incident</button></span>
                 <span id="incidentCount" style="color:var(--text-muted); font-size:0.85rem;">0 incidents</span>
             </div>
@@ -323,7 +348,7 @@
     <div id="toast" class="toast">Saved!</div>
 
     <script>
-    	  const SUPABASE_URL = '__SUPABASE_URL_PLACEHOLDER__';
+    	const SUPABASE_URL = '__SUPABASE_URL_PLACEHOLDER__';
         const SUPABASE_ANON_KEY = '__SUPABASE_ANON_KEY_PLACEHOLDER__';
        
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -335,7 +360,6 @@
             }
         }
         verifyAuth();
-        
         
         const TRACK_NAMES = {
             'Barcelona': 'Barcelona', 'Brands Hatch': 'Brands Hatch', 'COTA': 'COTA',
@@ -351,6 +375,7 @@
         let currentSessionId = null;
         let sessionsCache = [];
         let categoriesCache = [];
+        let cachedIncidents = []; // Cache incidents for summary export
 
         async function logout() {
             await supabaseClient.auth.signOut();
@@ -381,7 +406,63 @@
             t.style.display = 'block';
             setTimeout(() => t.style.display = 'none', 2500);
         }
-       
+
+        // --- SUMMARY & EXPORT LOGIC ---
+        function showSummary() {
+            const summaryCard = document.getElementById('summaryCard');
+            const tbody = document.getElementById('summaryTableBody');
+
+            // Filter incidents where status is 'Penalty Applied'
+            const penalties = cachedIncidents.filter(inc => inc.status === 'Penalty Applied');
+
+            // Sort by driver name asc
+            penalties.sort((a, b) => (a.driver_name || '').localeCompare(b.driver_name || ''));
+
+            if (penalties.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:1.5rem; color:var(--text-muted);">No drivers with status "Penalty Applied" in this session.</td></tr>';
+            } else {
+                tbody.innerHTML = penalties.map(inc => `
+                    <tr>
+                        <td><strong>${escapeHtml(inc.driver_name || 'Unknown')}</strong></td>
+                        <td>${escapeHtml(inc.penalty || '-')}</td>
+                        <td>${escapeHtml(inc.session_time || '-')}</td>
+                    </tr>
+                `).join('');
+            }
+
+            summaryCard.style.display = 'block';
+            summaryCard.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function closeSummary() {
+            document.getElementById('summaryCard').style.display = 'none';
+        }
+
+        function exportSummaryCsv() {
+            const penalties = cachedIncidents.filter(inc => inc.status === 'Penalty Applied');
+            penalties.sort((a, b) => (a.driver_name || '').localeCompare(b.driver_name || ''));
+
+            if (penalties.length === 0) {
+                return alert('No penalty records to export.');
+            }
+
+            let csvContent = 'driver_name,penalty,session_time\r\n';
+            penalties.forEach(inc => {
+                const driver = `"${(inc.driver_name || '').replace(/"/g, '""')}"`;
+                const penalty = `"${(inc.penalty || '').replace(/"/g, '""')}"`;
+                const time = `"${(inc.session_time || '').replace(/"/g, '""')}"`;
+                csvContent += `${driver},${penalty},${time}\r\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `session_penalties_${currentSessionId || 'export'}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
 
         // --- CATEGORY MANAGEMENT ---
         async function loadCategories() {
@@ -498,9 +579,6 @@
                 const json = await readAccJsonFile(file);
                 if (json.trackName) document.getElementById('trackName').value = json.trackName;
                 if (json.sessionType) document.getElementById('sessionType').value = json.sessionType;
-                
-               
-                
             } catch (err) {
                 alert('Could not parse JSON preview: ' + err.message);
             }
@@ -699,6 +777,8 @@
                 document.getElementById('editSessionCategory').value = '';
                 document.getElementById('incidentsBody').innerHTML = '<tr><td colspan="9" style="text-align:center; padding:2rem; color:var(--text-muted);">No sessions available for this category.</td></tr>';
                 document.getElementById('incidentCount').textContent = '0 incidents';
+                cachedIncidents = [];
+                closeSummary();
                 return;
             }
 
@@ -723,6 +803,7 @@
                 document.getElementById('editSessionDate').value = sessionObj.session_date || '';
                 document.getElementById('editSessionCategory').value = sessionObj.category_id || '';
             }
+            closeSummary();
             loadSessionIncidents(sessionId);
         }
 
@@ -759,7 +840,8 @@
 
             if (error) return alert(error.message);
 
-            data.sort((a, b) => {
+            cachedIncidents = data || [];
+            cachedIncidents.sort((a, b) => {
                 const parseSecs = (tStr) => {
                     if (!tStr) return 0;
                     const parts = tStr.split(':');
@@ -769,15 +851,15 @@
                 return parseSecs(a.session_time) - parseSecs(b.session_time);
             });
 
-            document.getElementById('incidentCount').textContent = `${data.length} incident(s)`;
+            document.getElementById('incidentCount').textContent = `${cachedIncidents.length} incident(s)`;
             const tbody = document.getElementById('incidentsBody');
 
-            if (data.length === 0) {
+            if (cachedIncidents.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:2rem; color:var(--text-muted);">No incidents in this session. Click "+ Add Manual Incident" above to add one.</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = data.map(inc => `
+            tbody.innerHTML = cachedIncidents.map(inc => `
                 <tr id="row-${inc.id}">
                     <td><input type="number" id="lap-${inc.id}" value="${inc.lap ?? ''}" placeholder="Lap"></td>
                     <td><input type="text" id="time-${inc.id}" value="${escapeAttr(inc.session_time)}"></td>
@@ -806,7 +888,6 @@
                             <option value="60 Seconds">60 Seconds</option>
                             <option value="Disqualified">Disqualified</option>
                             <option value="Under Investigation">Under Investigation</option>
-
                     </select></td>
                     <td><textarea id="notes-${inc.id}" rows="4">${escapeHtml(inc.steward_notes)}</textarea></td>
                     <td>
@@ -848,12 +929,15 @@
                 alert('Error saving: ' + error.message);
             } else {
                 showToast('Incident updated!');
+                // Update local cache so summary reflects changes without reloading
+                const idx = cachedIncidents.findIndex(i => i.id === id);
+                if (idx !== -1) cachedIncidents[idx] = { ...cachedIncidents[idx], ...payload };
             }
         }
 
         async function addBlankIncident() {
             if (!currentSessionId) return alert('Select a session first.');
-            const { error } = await supabaseClient
+            const { error, data } = await supabaseClient
                 .from('stewarding_incidents')
                 .insert([{
                     session_id: currentSessionId,
@@ -861,7 +945,9 @@
                     reason: 'Contact / Incident',
                     penalty: 'No Further Action',
                     status: 'Pending Review'
-                }]);
+                }])
+                .select()
+                .single();
 
             if (error) alert(error.message);
             else {
@@ -880,6 +966,7 @@
             if (error) alert(error.message);
             else {
                 document.getElementById(`row-${id}`)?.remove();
+                cachedIncidents = cachedIncidents.filter(i => i.id !== id);
                 showToast('Incident deleted');
             }
         }
@@ -897,6 +984,7 @@
             else {
                 showToast('Session deleted');
                 currentSessionId = null;
+                closeSummary();
                 loadSessionsList();
             }
         }
