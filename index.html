@@ -190,9 +190,9 @@
     </div>
 
     <script>
-    	
     	  const SUPABASE_URL = '__SUPABASE_URL_PLACEHOLDER__';
         const SUPABASE_ANON_KEY = '__SUPABASE_ANON_KEY_PLACEHOLDER__';
+        
         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -204,7 +204,7 @@
         async function init() {
             const [catRes, sessRes] = await Promise.all([
                 supabaseClient.from('stewarding_categories').select('*').order('name', { ascending: true }),
-                supabaseClient.from('stewarding_sessions').select('*').order('session_date', { ascending: true })
+                supabaseClient.from('stewarding_sessions').select('*').order('category_id', { ascending: true })
             ]);
 
             if (sessRes.error) {
@@ -218,6 +218,8 @@
             populateCategoryDropdown();
             onCategoryChange();
         }
+        
+        
 
         function populateCategoryDropdown() {
             const catSelect = document.getElementById('categorySelect');
@@ -234,6 +236,15 @@
             }
 
             catSelect.innerHTML = optionsHtml;
+        }
+        
+        function formatDateForDisplay(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+            return dateStr;
         }
 
         function onCategoryChange() {
@@ -255,9 +266,17 @@
                 return;
             }
 
-            sessionSelect.innerHTML = filteredSessions.map(s => 
-                `<option value="${s.id}">Round ${escapeHtml(s.session_type)} - ${escapeHtml(s.track_name)} - ${s.session_date}</option>`
-            ).join('');
+            // Create lookup map using 'categories' instead of 'categoriesCache'
+            const catMap = {};
+            categories.forEach(c => {
+                catMap[c.id] = c.name;
+            });
+
+            sessionSelect.innerHTML = filteredSessions.map(s => {
+                const categoryName = (s.category_id && catMap[s.category_id]) ? catMap[s.category_id] : 'Uncategorized';
+                const displayDate = formatDateForDisplay(s.session_date);
+                return `<option value="${s.id}">${escapeHtml(categoryName)} - Round ${escapeHtml(s.session_type)} - ${escapeHtml(s.track_name)} - ${displayDate}</option>`;
+            }).join('');
 
             selectSession(filteredSessions[0].id);
         }
@@ -271,6 +290,8 @@
                 ? `<span class="pill pill-category">${escapeHtml(catObj.name)}</span>` 
                 : '';
 
+            const displayDate = formatDateForDisplay(currentSessionObj.session_date);
+
             document.getElementById('sessionDetails').innerHTML = `
                 <div class="session-header">
                     <div>
@@ -280,7 +301,7 @@
                         ${categoryPill}
                         <span class="pill">${escapeHtml(currentSessionObj.track_name)}</span>
                         <span class="pill">Round ${escapeHtml(currentSessionObj.session_type)}</span>
-                        <span class="pill">${escapeHtml(currentSessionObj.session_date)}</span>
+                        <span class="pill">${displayDate}</span>
                     </div>
                 </div>
             `;

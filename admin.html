@@ -348,9 +348,8 @@
     <div id="toast" class="toast">Saved!</div>
 
     <script>
-    	const SUPABASE_URL = '__SUPABASE_URL_PLACEHOLDER__';
+        const SUPABASE_URL = '__SUPABASE_URL_PLACEHOLDER__';
         const SUPABASE_ANON_KEY = '__SUPABASE_ANON_KEY_PLACEHOLDER__';
-       
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function verifyAuth() {
@@ -371,11 +370,27 @@
             'Suzuka': 'Suzuka', 'Valencia': 'Valencia', 'Watkins Glen': 'Watkins Glen', 'Zandvoort': 'Zandvoort', 'Zolder': 'Zolder', 'Imola': 'Imola'
         };
 
-        document.getElementById('sessionDate').valueAsDate = new Date();
+        // Helper: Converts YYYY-MM-DD (DB format) to DD-MM-YYYY for display
+        function formatDateForDisplay(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+            return dateStr;
+        }
+
+        // Set default today's date in YYYY-MM-DD for the HTML date input
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        document.getElementById('sessionDate').value = `${yyyy}-${mm}-${dd}`;
+
         let currentSessionId = null;
         let sessionsCache = [];
         let categoriesCache = [];
-        let cachedIncidents = []; // Cache incidents for summary export
+        let cachedIncidents = [];
 
         async function logout() {
             await supabaseClient.auth.signOut();
@@ -412,10 +427,7 @@
             const summaryCard = document.getElementById('summaryCard');
             const tbody = document.getElementById('summaryTableBody');
 
-            // Filter incidents where status is 'Penalty Applied'
             const penalties = cachedIncidents.filter(inc => inc.status === 'Penalty Applied');
-
-            // Sort by driver name asc
             penalties.sort((a, b) => (a.driver_name || '').localeCompare(b.driver_name || ''));
 
             if (penalties.length === 0) {
@@ -591,7 +603,7 @@
             const categoryId = document.getElementById('uploadCategorySelect').value || null;
             const trackName = document.getElementById('trackName').value.trim() || 'Unknown Track';
             const sessionType = document.getElementById('sessionType').value.trim() || 'Race';
-            const sessionDate = document.getElementById('sessionDate').value;
+            const sessionDate = document.getElementById('sessionDate').value; // YYYY-MM-DD format for DB
 
             try {
                 const json = await readAccJsonFile(fileInput.files[0]);
@@ -749,7 +761,7 @@
             const { data, error } = await supabaseClient
                 .from('stewarding_sessions')
                 .select('*')
-                .order('session_date', { ascending: true });
+                .order('category_id', { ascending: true });
 
             if (error) return console.error(error);
 
@@ -782,9 +794,17 @@
                 return;
             }
 
-            select.innerHTML = filtered.map(s => 
-                `<option value="${s.id}">Round ${s.session_type} - ${s.track_name} - ${s.session_date}</option>`
-            ).join('');
+            // Create lookup map for category names
+            const catMap = {};
+            categoriesCache.forEach(c => {
+                catMap[c.id] = c.name;
+            });
+
+            select.innerHTML = filtered.map(s => {
+                const categoryName = (s.category_id && catMap[s.category_id]) ? catMap[s.category_id] : 'Uncategorized';
+                const displayDate = formatDateForDisplay(s.session_date);
+                return `<option value="${s.id}">${escapeHtml(categoryName)} - Round ${escapeHtml(s.session_type)} - ${escapeHtml(s.track_name)} - ${displayDate}</option>`;
+            }).join('');
 
             const targetId = (preferredSessionId && filtered.some(s => s.id === preferredSessionId))
                 ? preferredSessionId
@@ -800,7 +820,7 @@
             if (sessionObj) {
                 document.getElementById('editTrackName').value = sessionObj.track_name || '';
                 document.getElementById('editSessionType').value = sessionObj.session_type || '';
-                document.getElementById('editSessionDate').value = sessionObj.session_date || '';
+                document.getElementById('editSessionDate').value = sessionObj.session_date || ''; // HTML date input expects YYYY-MM-DD
                 document.getElementById('editSessionCategory').value = sessionObj.category_id || '';
             }
             closeSummary();
@@ -814,7 +834,7 @@
                 category_id: document.getElementById('editSessionCategory').value || null,
                 track_name: document.getElementById('editTrackName').value.trim(),
                 session_type: document.getElementById('editSessionType').value.trim(),
-                session_date: document.getElementById('editSessionDate').value
+                session_date: document.getElementById('editSessionDate').value // Saves as YYYY-MM-DD to DB
             };
 
             const { error } = await supabaseClient
@@ -929,7 +949,6 @@
                 alert('Error saving: ' + error.message);
             } else {
                 showToast('Incident updated!');
-                // Update local cache so summary reflects changes without reloading
                 const idx = cachedIncidents.findIndex(i => i.id === id);
                 if (idx !== -1) cachedIncidents[idx] = { ...cachedIncidents[idx], ...payload };
             }
@@ -937,7 +956,7 @@
 
         async function addBlankIncident() {
             if (!currentSessionId) return alert('Select a session first.');
-            const { error, data } = await supabaseClient
+            const { error } = await supabaseClient
                 .from('stewarding_incidents')
                 .insert([{
                     session_id: currentSessionId,
@@ -965,7 +984,7 @@
 
             if (error) alert(error.message);
             else {
-                document.getElementById(`row-${id}`)?.remove();
+                document.getElementById(`row-${id}`)	?.remove();
                 cachedIncidents = cachedIncidents.filter(i => i.id !== id);
                 showToast('Incident deleted');
             }
