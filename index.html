@@ -372,11 +372,11 @@
                 return `
                     <tr>
                         <td><strong>${escapeHtml(inc.session_time || '-')}</strong><div class="notes-text">Lap ${inc.lap ?? '-'}</div></td>
-                        <td width="300">
+                        <td width="240">
                             <div><span class="car-badge">#${inc.car_number ?? '?'}</span> <strong>${escapeHtml(inc.driver_name || 'Unknown')}</strong></div>
                             ${secondary}
                         </td>
-                        <td>${escapeHtml(inc.reason || '-')}</td>
+                        <td width="240">${escapeHtml(inc.reason || '-')}</td>
                         <td>
                             <strong>${escapeHtml(inc.penalty || 'No Further Action')}</strong>
                             ${inc.steward_notes ? `<div class="notes-text">${escapeHtml(inc.steward_notes)}</div>` : ''}
