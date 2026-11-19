@@ -25,7 +25,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             padding: 1.5rem;
         }
-        .container { max-width: 1700px; margin: 0 auto; }
+        .container { max-width: 1600px; margin: 0 auto; }
         header {
             display: flex;
             justify-content: space-between;
@@ -161,11 +161,26 @@
             display: none;
             z-index: 999;
         }
+        .back-btn {
+            background: var(--bg-panel);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 2px 5px 3px 5px;
+            margin: 6px 0px 0px 0px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .back-btn:hover { border-color: var(--text-muted);
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
+        <header id="pagetop">
             <div><h1><span>//</span> Steward Incident Manager - Admin</h1>
             <p class="subtitle">Official Incident Reports & Post-Race Decisions</p>
             </div>
@@ -222,6 +237,13 @@
                         <input type="number" id="sessionType" placeholder="e.g. 1">
                     </div>
                 </div>
+                
+                <div class="form-group">
+                        <label>ACC Replay File Link (Optional)</label>
+                        <input type="text" id="replayLink" placeholder="https://drive.google.com/drive/folders/xyz..">
+                </div>
+                
+                
                 <div class="form-group">
                     <label>Select ACC JSON File</label>
                     <input type="file" id="jsonFile" accept=".json">
@@ -257,6 +279,11 @@
                 <div class="form-group">
                     <label>Edit Session Date</label>
                     <input type="date" id="editSessionDate">
+                </div>
+                
+                <div class="form-group">
+                        <label>ACC Replay File Link (Optional)</label>
+                        <input type="text" id="editreplayLink" placeholder="https://drive.google.com/drive/folders/xyz..">
                 </div>
 
                 <div style="display:flex; gap:0.75rem; margin-top:1rem; flex-wrap:wrap;">
@@ -326,14 +353,14 @@
                 <table>
                     <thead>
                         <tr>
-                            <th style="width:75px;">Lap</th>
-                            <th style="width:95px;">Time</th>
-                            <th style="width:210px;">Primary Car & Driver</th>
-                            <th style="width:210px;">Secondary Car & Driver</th>
+                            <th style="width:76px;">Lap</th>
+                            <th style="width:78px;">Time</th>
+                            <th style="width:200px;">Primary Car & Driver</th>
+                            <th style="width:200px;">Secondary Car & Driver</th>
                             <th style="width:200px;">Reason / Offence</th>
                             <th style="width:180px;">Penalty</th>
                             <th>Steward Notes</th>
-                            <th style="width:155px;">Status</th>
+                            <th style="width:170px;">Status</th>
                             <th style="width:130px;">Actions</th>
                         </tr>
                     </thead>
@@ -343,6 +370,7 @@
                 </table>
             </div>
         </div>
+        <div style="width:100%; text-align:center;"><a href="#pagetop" onclick="goToTop(event)" class="back-btn">&#8593; Back to Top</a></div>
     </div>
 
     <div id="toast" class="toast">Saved!</div>
@@ -350,6 +378,8 @@
     <script>
         const SUPABASE_URL = '__SUPABASE_URL_PLACEHOLDER__';
         const SUPABASE_ANON_KEY = '__SUPABASE_ANON_KEY_PLACEHOLDER__';
+        
+       
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function verifyAuth() {
@@ -602,6 +632,7 @@
 
             const categoryId = document.getElementById('uploadCategorySelect').value || null;
             const trackName = document.getElementById('trackName').value.trim() || 'Unknown Track';
+            const replayLink = document.getElementById('replayLink').value.trim() || null;
             const sessionType = document.getElementById('sessionType').value.trim() || 'Race';
             const sessionDate = document.getElementById('sessionDate').value; // YYYY-MM-DD format for DB
 
@@ -658,7 +689,8 @@
                         category_id: categoryId,
                         track_name: trackName,
                         session_type: sessionType,
-                        session_date: sessionDate
+                        session_date: sessionDate,
+                        replay_link: replayLink
                     }])
                     .select()
                     .single();
@@ -786,6 +818,7 @@
                 document.getElementById('editTrackName').value = '';
                 document.getElementById('editSessionType').value = '';
                 document.getElementById('editSessionDate').value = '';
+                document.getElementById('editreplayLink').value = '';
                 document.getElementById('editSessionCategory').value = '';
                 document.getElementById('incidentsBody').innerHTML = '<tr><td colspan="9" style="text-align:center; padding:2rem; color:var(--text-muted);">No sessions available for this category.</td></tr>';
                 document.getElementById('incidentCount').textContent = '0 incidents';
@@ -822,6 +855,7 @@
                 document.getElementById('editSessionType').value = sessionObj.session_type || '';
                 document.getElementById('editSessionDate').value = sessionObj.session_date || ''; // HTML date input expects YYYY-MM-DD
                 document.getElementById('editSessionCategory').value = sessionObj.category_id || '';
+                document.getElementById('editreplayLink').value = sessionObj.replay_link || '';
             }
             closeSummary();
             loadSessionIncidents(sessionId);
@@ -834,7 +868,8 @@
                 category_id: document.getElementById('editSessionCategory').value || null,
                 track_name: document.getElementById('editTrackName').value.trim(),
                 session_type: document.getElementById('editSessionType').value.trim(),
-                session_date: document.getElementById('editSessionDate').value // Saves as YYYY-MM-DD to DB
+                session_date: document.getElementById('editSessionDate').value,
+                replay_link: document.getElementById('editreplayLink').value.trim()
             };
 
             const { error } = await supabaseClient
@@ -1022,6 +1057,13 @@
             await loadSessionsList();
             await populateTrackDropdowns();
         }
+        
+        function goToTop(event) {
+        event.preventDefault();
+        document.getElementById('pagetop').scrollIntoView({ behavior: 'smooth' });
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+        
         init();
     </script>
 </body>

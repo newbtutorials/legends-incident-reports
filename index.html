@@ -39,6 +39,9 @@
             flex-wrap: wrap;
             gap: 1rem;
         }
+        a {
+        	text-decoration:none;
+        }
         h1 { font-size: 1.5rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
         h1 span { color: var(--accent-blue); }
         .subtitle { color: var(--accent-yellow); font-size: 0.85rem; }
@@ -165,12 +168,40 @@
             align-items: center;
             gap: 0.4rem;
         }
-        .disputeBtn:hover { border-color: var(--text-muted); }
+        .disputeBtn:hover { border-color: var(--text-muted);
+        }
+        .pillBtn {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .pillBtn:hover { border-color: var(--text-main);
+        }
+        .back-btn {
+            background: var(--bg-panel);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 2px 5px 3px 5px;
+            margin: 6px 0px 0px 0px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .back-btn:hover { border-color: var(--text-muted);
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
+        <header id="pagetop">
             <div>
                 <h1><span>//</span> Scottish Legends - Incident Reports</h1>
                 <p class="subtitle">Official Incident Reports & Post-Race Decisions</p>
@@ -202,7 +233,10 @@
         <div id="incidentsContainer" class="table-wrap">
             <div class="empty-state">Loading stewarding reports...</div>
         </div>
+        
+        <div style="width:100%; text-align:center;"><a href="#pagetop" onclick="goToTop(event)" class="back-btn">&#8593; Back to Top</a></div>
     </div>
+    
 
     <script>
     	  const SUPABASE_URL = '__SUPABASE_URL_PLACEHOLDER__';
@@ -306,20 +340,23 @@
                 : '';
 
             const displayDate = formatDateForDisplay(currentSessionObj.session_date);
+            
+            const replaylink = currentSessionObj.replay_link || '';
 
-            document.getElementById('sessionDetails').innerHTML = `
-                <div class="session-header">
-                    <div>
-                        <h2>INCIDENT REPORT</h2>
-                    </div>
-                    <div class="meta-pills">
-                        ${categoryPill}
-                        <span class="pill">${escapeHtml(currentSessionObj.track_name)}</span>
-                        <span class="pill">Round ${escapeHtml(currentSessionObj.session_type)}</span>
-                        <span class="pill">${displayDate}</span>
-                    </div>
-                </div>
-            `;
+						document.getElementById('sessionDetails').innerHTML = `
+						    <div class="session-header">
+						        <div>
+						            <h2>INCIDENT REPORT</h2>
+						        </div>
+						        <div class="meta-pills">
+						            ${categoryPill}
+						            <span class="pill">${escapeHtml(currentSessionObj.track_name)}</span>
+						            <span class="pill">Round ${escapeHtml(currentSessionObj.session_type)}</span>
+						            <span class="pill">${displayDate}</span>
+						            ${replaylink ? `<span><a href="${escapeHtml(replaylink)}" target="_blank" class="pill">Download Replay</a></span>` : ''}
+						        </div>
+						    </div>
+						`;
 
             const { data: incidents, error } = await supabaseClient
                 .from('stewarding_incidents')
@@ -387,16 +424,21 @@
                 return `
                     <tr>
                         <td><strong>${escapeHtml(inc.session_time || '-')}</strong><div class="notes-text">Lap ${inc.lap ?? '-'}</div></td>
-                        <td width="240">
+                        
+                        <td>
                             <div><span class="car-badge">#${inc.car_number ?? '?'}</span> <strong>${escapeHtml(inc.driver_name || 'Unknown')}</strong></div>
                             ${secondary}
                         </td>
-                        <td width="240">${escapeHtml(inc.reason || '-')}</td>
+                        
+                        <td>${escapeHtml(inc.reason || '-')}</td>
+                        
                         <td>
                             <strong>${escapeHtml(inc.penalty || 'No Further Action')}</strong>
                             ${inc.steward_notes ? `<div class="notes-text">${escapeHtml(inc.steward_notes)}</div>` : ''}
                         </td>
-                        <td width="170"><span class="status-badge ${statusClass}">${escapeHtml(inc.status)}</span><br><a href="https://docs.google.com/forms/d/e/1FAIpQLSdmuyQarbT36JNXS22IJqOqF6BEyIZ_thCXB9nUCXPIA8x18A/viewform" target="_blank" class="disputeBtn">Appeal This Verdict</a></td>
+                        
+                        <td><span class="status-badge ${statusClass}">${escapeHtml(inc.status)}</span><br><a href="https://docs.google.com/forms/d/e/1FAIpQLSdmuyQarbT36JNXS22IJqOqF6BEyIZ_thCXB9nUCXPIA8x18A/viewform" target="_blank" class="disputeBtn">Appeal This Verdict</a></td>
+                   
                     </tr>
                 `;
             }).join('');
@@ -405,11 +447,11 @@
                 <table>
                     <thead>
                         <tr>
-                            <th style="width:95px;">Time</th>
-                            <th style="width:230px;">Involved Drivers</th>
-                            <th>Incident / Offence</th>
+                            <th style="width:65px;">Time</th>
+                            <th style="width:240px;">Involved Drivers</th>
+                            <th style="width:240px;">Incident / Offence</th>
                             <th>Penalties / Verdict</th>
-                            <th style="width:140px;">Status</th>
+                            <th style="width:170px;">Status</th>
                         </tr>
                     </thead>
                     <tbody>${rows}</tbody>
@@ -420,6 +462,12 @@
         function escapeHtml(str) {
             if (!str) return '';
             return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+        }
+        
+        function goToTop(event) {
+        event.preventDefault();
+        document.getElementById('pagetop').scrollIntoView({ behavior: 'smooth' });
+        history.replaceState(null, '', window.location.pathname + window.location.search);
         }
 
         init();
