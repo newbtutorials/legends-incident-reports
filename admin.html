@@ -300,7 +300,8 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h2 style="margin: 0;">Session Penalties Summary</h2>
                 <div style="display: flex; gap: 0.75rem;">
-                    <button onclick="exportSummaryHtml()" class="btn btn-success">Export to HTML</button>
+                    <button onclick="exportSummaryHtml()" class="btn btn-success">Export HTML</button>
+                    <button onclick="exportSummaryCsv()" class="btn btn-success">Export CSV</button>
                     <button onclick="closeSummary()" class="btn btn-danger">Close</button>
                 </div>
             </div>
@@ -538,6 +539,8 @@
         function closeSummary() {
             document.getElementById('summaryCard').style.display = 'none';
         }
+        
+        // Export HTML
 
         function exportSummaryHtml() {
             const penalties = getPenaltySummaryList();
@@ -666,6 +669,45 @@
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
+        }
+        
+        // Export CSV
+        
+        function exportSummaryCsv() {
+            const penalties = cachedIncidents.filter(inc => inc.status === 'Penalty Applied');
+            penalties.sort((a, b) => (a.driver_name || '').localeCompare(b.driver_name || ''));
+
+            if (penalties.length === 0) {
+                return alert('No penalty records to export.');
+            }
+            
+            const sessionObj = sessionsCache.find(s => s.id === currentSessionId) || {};
+            const categoryObj = categoriesCache.find(c => c.id === sessionObj.category_id);
+
+            const categoryName = categoryObj ? categoryObj.name : 'Uncategorized';
+            const trackName = sessionObj.track_name || 'Unknown Track';
+            const roundNum = sessionObj.session_type ?? '-';
+            const formattedDate = formatDateForDisplay(sessionObj.session_date) || '00-00-0000';
+
+            const filename = `${slugifyDot(categoryName)}_Round-${slugifyDot(roundNum)}_${slugifyUnderscore(trackName)}_${formattedDate}.csv`;
+
+            let csvContent = 'driver_name,car_number,penalty,session_time\r\n';
+            penalties.forEach(inc => {
+                const driver = `"${(inc.driver_name || '').replace(/"/g, '""')}"`;
+                const carnum = `"${(inc.car_number || '')}"`;
+                const penalty = `"${(inc.penalty || '').replace(/"/g, '""')}"`;
+                const time = `"${(inc.session_time || '').replace(/"/g, '""')}"`;
+                csvContent += `${driver},${carnum},${penalty},${time}\r\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         // --- CATEGORY MANAGEMENT ---
