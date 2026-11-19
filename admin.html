@@ -30,7 +30,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 2px solid var(--accent-red);
+            border-bottom: 2px solid var(--accent-blue);
             padding-bottom: 1rem;
             margin-bottom: 2rem;
             flex-wrap: wrap;
@@ -38,7 +38,7 @@
         }
         h1 { font-size: 1.5rem; text-transform: uppercase; letter-spacing: 1px; }
         .header-actions { display: flex; gap: 0.75rem; }
-        h1 span { color: var(--accent-red); }
+        h1 span { color: var(--accent-blue); }
         .subtitle { color: var(--accent-yellow); font-size: 0.85rem; }
         
         .btn {
@@ -175,7 +175,7 @@
             align-items: center;
             gap: 0.4rem;
         }
-        .back-btn:hover { border-color: var(--text-muted);
+        .back-btn:hover { border-color: var(--text-muted); }
     </style>
 </head>
 <body>
@@ -208,7 +208,6 @@
         </div>
 
         <div class="grid-top">
-        	
             <!-- Upload ACC JSON -->
             <div class="card">
                 <h2>Upload ACC Race Control JSON</h2>
@@ -219,18 +218,17 @@
                     </select>
                 </div>
             
-               
-                    <div class="form-group">
-                        <label>Session Date (Race Date Auto-filled from JSON)</label>
-                        <input type="date" id="sessionDate" readonly>
-                    </div>
+                <div class="form-group">
+                    <label>Session Date (Race Date Auto-filled from JSON)</label>
+                    <input type="date" id="sessionDate" readonly>
+                </div>
           
                 <div class="form-row">
                     <div class="form-group">
                         <label>Track Name</label>
                         <select id="trackName">
-                    		<option value="">-- Select Track --</option>
-                				</select>
+                            <option value="">-- Select Track --</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>Race Number</label>
@@ -239,10 +237,9 @@
                 </div>
                 
                 <div class="form-group">
-                        <label>ACC Replay File Link (Optional)</label>
-                        <input type="text" id="replayLink" placeholder="https://drive.google.com/drive/folders/xyz..">
+                    <label>ACC Replay File Link (Optional)</label>
+                    <input type="text" id="replayLink" placeholder="https://drive.google.com/drive/folders/xyz..">
                 </div>
-                
                 
                 <div class="form-group">
                     <label>Select ACC JSON File</label>
@@ -256,7 +253,6 @@
                 <h2>Edit Session Details</h2>
                 <!-- Session Metadata Edit Form Fields -->
                 <div class="form-row">
-              
                     <div class="form-group">
                         <label>Edit Category</label>
                         <select id="editSessionCategory">
@@ -268,8 +264,8 @@
                     <div class="form-group">
                         <label>Edit Track Name</label>
                         <select id="editTrackName">
-                    		<option value="">-- Select Track --</option>
-                				</select>
+                            <option value="">-- Select Track --</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>Edit Race Number</label>
@@ -282,8 +278,8 @@
                 </div>
                 
                 <div class="form-group">
-                        <label>ACC Replay File Link (Optional)</label>
-                        <input type="text" id="editreplayLink" placeholder="https://drive.google.com/drive/folders/xyz..">
+                    <label>ACC Replay File Link (Optional)</label>
+                    <input type="text" id="editreplayLink" placeholder="https://drive.google.com/drive/folders/xyz..">
                 </div>
 
                 <div style="display:flex; gap:0.75rem; margin-top:1rem; flex-wrap:wrap;">
@@ -291,55 +287,52 @@
                     <button onclick="deleteCurrentSession()" class="btn btn-danger">Delete Session</button>
                 </div>
             </div>
+        </div> <!-- End Grid top -->
             
-            </div> <!-- End Grid top -->
-            
-            <!-- Summary Card (Appears above Select Incident Report when Show Summary is clicked) -->
-            <div id="summaryCard" class="card" style="display: none; margin-bottom: 20px; border-color: var(--accent-blue);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <h2 style="margin: 0;">Session Penalties Summary</h2>
-                    <div style="display: flex; gap: 0.75rem;">
-                        <button onclick="exportSummaryCsv()" class="btn btn-success">Export to Spreadsheet (CSV)</button>
-                        <button onclick="closeSummary()" class="btn btn-danger">Close</button>
-                    </div>
-                </div>
-                <div class="table-wrap" style="border: 1px solid var(--border); border-radius: 6px;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Driver Name</th>
-                                <th>Penalty</th>
-                                <th>Replay Time</th>
-                            </tr>
-                        </thead>
-                        <tbody id="summaryTableBody">
-                            <tr><td colspan="3" style="text-align:center; padding:1.5rem; color:var(--text-muted);">No penalties applied.</td></tr>
-                        </tbody>
-                    </table>
+        <!-- Summary Card (Appears above Select Incident Report when Show Summary is clicked) -->
+        <div id="summaryCard" class="card" style="display: none; margin-bottom: 20px; border-color: var(--accent-blue);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 style="margin: 0;">Session Penalties Summary</h2>
+                <div style="display: flex; gap: 0.75rem;">
+                    <button onclick="exportSummaryHtml()" class="btn btn-success">Export to HTML</button>
+                    <button onclick="closeSummary()" class="btn btn-danger">Close</button>
                 </div>
             </div>
+            <div class="table-wrap" style="border: 1px solid var(--border); border-radius: 6px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Driver Name</th>
+                            <th>Car Number</th>
+                            <th>Penalty</th>
+                            <th>Replay Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="summaryTableBody">
+                        <tr><td colspan="4" style="text-align:center; padding:1.5rem; color:var(--text-muted);">No penalties applied.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-            <!-- Select Existing Sessions -->
-            <div class="card" style="padding-bottom:0px; margin-top:0px; margin-bottom:20px;">
-                <h2>Select Incident Report</h2>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Filter by Category</label>
-                        <select id="filterCategorySelect" onchange="filterSessionDropdown()">
-                            <option value="ALL">All Categories</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Uploaded Sessions</label>
-                        <select id="sessionSelect" onchange="onSessionSelectChange(this.value)">
-                            <option value="">-- Loading sessions --</option>
-                        </select>
-                    </div>
+        <!-- Select Existing Sessions -->
+        <div class="card" style="padding-bottom:0px; margin-top:0px; margin-bottom:20px;">
+            <h2>Select Incident Report</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Filter by Category</label>
+                    <select id="filterCategorySelect" onchange="filterSessionDropdown()">
+                        <option value="ALL">All Categories</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Uploaded Sessions</label>
+                    <select id="sessionSelect" onchange="onSessionSelectChange(this.value)">
+                        <option value="">-- Loading sessions --</option>
+                    </select>
                 </div>
             </div>
-            
-            
-        
+        </div>
 
         <!-- Incidents Editor Table -->
         <div class="card" style="padding:0; overflow:hidden;">
@@ -376,10 +369,9 @@
     <div id="toast" class="toast">Saved!</div>
 
     <script>
-        const SUPABASE_URL = '__SUPABASE_URL_PLACEHOLDER__';
+    	  const SUPABASE_URL = '__SUPABASE_URL_PLACEHOLDER__';
         const SUPABASE_ANON_KEY = '__SUPABASE_ANON_KEY_PLACEHOLDER__';
         
-       
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function verifyAuth() {
@@ -400,7 +392,7 @@
             'Suzuka': 'Suzuka', 'Valencia': 'Valencia', 'Watkins Glen': 'Watkins Glen', 'Zandvoort': 'Zandvoort', 'Zolder': 'Zolder', 'Imola': 'Imola'
         };
 
-        // Helper: Converts YYYY-MM-DD (DB format) to DD-MM-YYYY for display
+        // Helper: Converts YYYY-MM-DD (DB format) to DD-MM-YYYY for display & filenames
         function formatDateForDisplay(dateStr) {
             if (!dateStr) return '';
             const parts = dateStr.split('-');
@@ -408,6 +400,35 @@
                 return `${parts[2]}-${parts[1]}-${parts[0]}`;
             }
             return dateStr;
+        }
+
+        function slugifyDot(str) {
+            return (str || '')
+                .toString()
+                .trim()
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '.')
+                .replace(/^\.+|\.+$/g, '') || 'uncategorized';
+        }
+
+        function slugifyUnderscore(str) {
+            return (str || '')
+                .toString()
+                .trim()
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '_')
+                .replace(/^_+|_+$/g, '') || 'unknown_track';
+        }
+
+        function escapeXml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str).replace(/[<>&'"]/g, m => ({
+                '<': '&lt;',
+                '>': '&gt;',
+                '&': '&amp;',
+                "'": '&apos;',
+                '"': '&quot;'
+            }[m]));
         }
 
         // Set default today's date in YYYY-MM-DD for the HTML date input
@@ -452,20 +473,25 @@
             setTimeout(() => t.style.display = 'none', 2500);
         }
 
-        // --- SUMMARY & EXPORT LOGIC ---
+        // --- SUMMARY & XML EXPORT LOGIC ---
+        function getPenaltySummaryList() {
+            const penalties = cachedIncidents.filter(inc => inc.status === 'Penalty Applied');
+            penalties.sort((a, b) => (a.driver_name || '').localeCompare(b.driver_name || ''));
+            return penalties;
+        }
+
         function showSummary() {
             const summaryCard = document.getElementById('summaryCard');
             const tbody = document.getElementById('summaryTableBody');
-
-            const penalties = cachedIncidents.filter(inc => inc.status === 'Penalty Applied');
-            penalties.sort((a, b) => (a.driver_name || '').localeCompare(b.driver_name || ''));
+            const penalties = getPenaltySummaryList();
 
             if (penalties.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:1.5rem; color:var(--text-muted);">No drivers with status "Penalty Applied" in this session.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:1.5rem; color:var(--text-muted);">No drivers with status "Penalty Applied" in this session.</td></tr>';
             } else {
                 tbody.innerHTML = penalties.map(inc => `
                     <tr>
                         <td><strong>${escapeHtml(inc.driver_name || 'Unknown')}</strong></td>
+                        <td>${escapeHtml(inc.car_number ?? '-')}</td>
                         <td>${escapeHtml(inc.penalty || '-')}</td>
                         <td>${escapeHtml(inc.session_time || '-')}</td>
                     </tr>
@@ -480,30 +506,133 @@
             document.getElementById('summaryCard').style.display = 'none';
         }
 
-        function exportSummaryCsv() {
-            const penalties = cachedIncidents.filter(inc => inc.status === 'Penalty Applied');
-            penalties.sort((a, b) => (a.driver_name || '').localeCompare(b.driver_name || ''));
-
+        function exportSummaryHtml() {
+            const penalties = getPenaltySummaryList();
             if (penalties.length === 0) {
                 return alert('No penalty records to export.');
             }
 
-            let csvContent = 'driver_name,penalty,session_time\r\n';
-            penalties.forEach(inc => {
-                const driver = `"${(inc.driver_name || '').replace(/"/g, '""')}"`;
-                const penalty = `"${(inc.penalty || '').replace(/"/g, '""')}"`;
-                const time = `"${(inc.session_time || '').replace(/"/g, '""')}"`;
-                csvContent += `${driver},${penalty},${time}\r\n`;
-            });
+            const sessionObj = sessionsCache.find(s => s.id === currentSessionId) || {};
+            const categoryObj = categoriesCache.find(c => c.id === sessionObj.category_id);
 
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const categoryName = categoryObj ? categoryObj.name : 'Uncategorized';
+            const trackName = sessionObj.track_name || 'Unknown Track';
+            const roundNum = sessionObj.session_type ?? '-';
+            const formattedDate = formatDateForDisplay(sessionObj.session_date) || '00-00-0000';
+
+            const filename = `${slugifyDot(categoryName)}_${slugifyUnderscore(trackName)}_${formattedDate}.html`;
+
+            const rowsHtml = penalties.map(inc => `
+                <tr>
+                    <td><strong>${escapeHtml(inc.driver_name || 'Unknown')}</strong></td>
+                    <td>#${escapeHtml(inc.car_number ?? '-')}</td>
+                    <td class="penalty">${escapeHtml(inc.penalty || '-')}</td>
+                    <td>${escapeHtml(inc.session_time || '-')}</td>
+                </tr>
+            `).join('');
+
+            const htmlContent = `<!DOCTYPE html>
+						<html lang="en">
+						<head>
+						    <meta charset="UTF-8">
+						    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+						    <title>Penalty Summary - ${escapeHtml(categoryName)}</title>
+						    <style>
+						        body {
+						            background: #0b0d10;
+						            color: #f3f4f6;
+						            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+						            padding: 2rem;
+						            margin: 0;
+						        }
+						        .wrap {
+						            max-width: 1000px;
+						            margin: 0 auto;
+						            background: #14181f;
+						            border: 1px solid #2a3241;
+						            border-top: 3px solid #e10600;
+						            border-radius: 8px;
+						            padding: 1.5rem 2rem;
+						        }
+						        h1 {
+						            margin: 0 0 0.5rem 0;
+						            font-size: 1.4rem;
+						            text-transform: uppercase;
+						            letter-spacing: 0.8px;
+						        }
+						        h1 span { color: #e10600; }
+						        .meta {
+						            color: #9ca3af;
+						            font-size: 0.9rem;
+						            margin-bottom: 1.5rem;
+						        }
+						        .meta span {
+						            color: #ECE706;
+						            font-weight: 600;
+						        }
+						        table {
+						            width: 100%;
+						            border-collapse: collapse;
+						            background: #0e1116;
+						            border-radius: 6px;
+						            overflow: hidden;
+						        }
+						        th {
+						            background: #101318;
+						            color: #9ca3af;
+						            font-size: 0.75rem;
+						            text-transform: uppercase;
+						            text-align: left;
+						            padding: 0.85rem 1rem;
+						            border-bottom: 1px solid #2a3241;
+						        }
+						        td {
+						            padding: 0.8rem 1rem;
+						            border-bottom: 1px solid #2a3241;
+						            font-size: 0.9rem;
+						        }
+						        tr:last-child td { border-bottom: none; }
+						        .penalty {
+						            color: #41BD22;
+						            font-weight: 700;
+						        }
+						    </style>
+								</head>
+								<body>
+								    <div class="wrap">
+								        <h1><span>//</span> Steward Penalty Summary</h1>
+								        <div class="meta">
+								            Championship: <span>${escapeHtml(categoryName)}</span> |
+								            Track: <span>${escapeHtml(trackName)}</span> |
+								            Round: <span>${escapeHtml(roundNum)}</span> |
+								            Date: <span>${escapeHtml(formattedDate)}</span>
+								        </div>
+								        <table>
+								            <thead>
+								                <tr>
+								                    <th>Driver Name</th>
+								                    <th>Car #</th>
+								                    <th>Penalty</th>
+								                    <th>Replay Time</th>
+								                </tr>
+								            </thead>
+								            <tbody>
+								                ${rowsHtml}
+								            </tbody>
+								        </table>
+								    </div>
+								</body>
+								</html>`;
+
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.setAttribute('href', url);
-            link.setAttribute('download', `session_penalties_${currentSessionId || 'export'}.csv`);
+            link.setAttribute('download', filename);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         }
 
         // --- CATEGORY MANAGEMENT ---
@@ -634,7 +763,7 @@
             const trackName = document.getElementById('trackName').value.trim() || 'Unknown Track';
             const replayLink = document.getElementById('replayLink').value.trim() || null;
             const sessionType = document.getElementById('sessionType').value.trim() || 'Race';
-            const sessionDate = document.getElementById('sessionDate').value; // YYYY-MM-DD format for DB
+            const sessionDate = document.getElementById('sessionDate').value;
 
             try {
                 const json = await readAccJsonFile(fileInput.files[0]);
@@ -793,7 +922,8 @@
             const { data, error } = await supabaseClient
                 .from('stewarding_sessions')
                 .select('*')
-                .order('category_id', { ascending: true });
+                .order('category_id', { ascending: true })
+                .order('session_type', { ascending: true });
 
             if (error) return console.error(error);
 
@@ -827,7 +957,6 @@
                 return;
             }
 
-            // Create lookup map for category names
             const catMap = {};
             categoriesCache.forEach(c => {
                 catMap[c.id] = c.name;
@@ -853,7 +982,7 @@
             if (sessionObj) {
                 document.getElementById('editTrackName').value = sessionObj.track_name || '';
                 document.getElementById('editSessionType').value = sessionObj.session_type || '';
-                document.getElementById('editSessionDate').value = sessionObj.session_date || ''; // HTML date input expects YYYY-MM-DD
+                document.getElementById('editSessionDate').value = sessionObj.session_date || '';
                 document.getElementById('editSessionCategory').value = sessionObj.category_id || '';
                 document.getElementById('editreplayLink').value = sessionObj.replay_link || '';
             }
@@ -1019,7 +1148,7 @@
 
             if (error) alert(error.message);
             else {
-                document.getElementById(`row-${id}`)	?.remove();
+                document.getElementById(`row-${id}`)?.remove();
                 cachedIncidents = cachedIncidents.filter(i => i.id !== id);
                 showToast('Incident deleted');
             }
@@ -1054,14 +1183,14 @@
 
         async function init() {
             await loadCategories();
+            populateTrackDropdowns();
             await loadSessionsList();
-            await populateTrackDropdowns();
         }
         
         function goToTop(event) {
-        event.preventDefault();
-        document.getElementById('pagetop').scrollIntoView({ behavior: 'smooth' });
-        history.replaceState(null, '', window.location.pathname + window.location.search);
+            event.preventDefault();
+            document.getElementById('pagetop').scrollIntoView({ behavior: 'smooth' });
+            history.replaceState(null, '', window.location.pathname + window.location.search);
         }
         
         init();

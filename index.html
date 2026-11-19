@@ -253,7 +253,7 @@
         async function init() {
             const [catRes, sessRes] = await Promise.all([
                 supabaseClient.from('stewarding_categories').select('*').order('name', { ascending: true }),
-                supabaseClient.from('stewarding_sessions').select('*').order('category_id', { ascending: true })
+                supabaseClient.from('stewarding_sessions').select('*').order('category_id', { ascending: true }).order('session_type', { ascending: true })
             ]);
 
             if (sessRes.error) {

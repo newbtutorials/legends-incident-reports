@@ -11,6 +11,8 @@
             --bg-panel: #14181f;
             --border: #2a3241;
             --accent-red: #e10600;
+            --accent-blue: #3b82f6;
+            --accent-green: #41BD22;
             --text-main: #f3f4f6;
             --text-muted: #9ca3af;
         }
@@ -28,15 +30,16 @@
         .login-card {
             background: var(--bg-panel);
             border: 1px solid var(--border);
-            border-top: 3px solid var(--accent-red);
+            border-top: 3px solid var(--accent-blue);
             border-radius: 8px;
             padding: 2.25rem;
             width: 100%;
             max-width: 400px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
-        h1 { font-size: 1.4rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.25rem; }
-        p { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.75rem; }
+        h1 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.25rem; text-align:center;}
+        h3 { font-size: 18px; letter-spacing: 1px; margin-bottom: 0.25rem;  text-align:center;}
+        p { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.75rem;  text-align:center;}
         .form-group { margin-bottom: 1.25rem; }
         label { display: block; font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem; font-weight: 600; }
         input {
@@ -48,10 +51,10 @@
             border-radius: 4px;
             font-size: 0.95rem;
         }
-        input:focus { outline: none; border-color: var(--accent-red); }
+        input:focus { outline: none; border-color: var(--accent-blue); }
         button {
             width: 100%;
-            background: var(--accent-red);
+            background: var(--accent-blue);
             color: #fff;
             border: none;
             padding: 0.85rem;
@@ -62,7 +65,7 @@
             cursor: pointer;
             margin-top: 0.5rem;
         }
-        button:hover { background: #c20500; }
+        button:hover { background: var(--accent-green); }
         button:disabled { opacity: 0.6; cursor: not-allowed; }
         .error-msg {
             background: rgba(225, 6, 0, 0.15);
@@ -78,7 +81,8 @@
 </head>
 <body>
     <div class="login-card">
-        <h1>Steward Access</h1>
+    	  <h3>SiM v1.0</h3>
+        <h1>Steward Incident Manager</h1>
         <p>Sign in to manage incident reports.</p>
         <div id="errorBox" class="error-msg"></div>
         <form id="loginForm">
@@ -97,6 +101,8 @@
     <script>
         const SUPABASE_URL = '__SUPABASE_URL_PLACEHOLDER__';
         const SUPABASE_ANON_KEY = '__SUPABASE_ANON_KEY_PLACEHOLDER__';
+        
+        
         
         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
