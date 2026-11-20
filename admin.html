@@ -378,7 +378,7 @@
     <script>
     	  const SUPABASE_URL = '__SUPABASE_URL_PLACEHOLDER__';
         const SUPABASE_ANON_KEY = '__SUPABASE_ANON_KEY_PLACEHOLDER__';
-        
+       
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function verifyAuth() {
@@ -508,26 +508,109 @@
         }
 
         // --- SUMMARY & XML EXPORT LOGIC ---
+        // --- PENALTY CONVERSION & SUMMARY AGGREGATION ---
+        const PENALTY_VALUE_MAP = {
+            'no further action': 0,
+            '5 seconds': 5,
+            '10 seconds': 10,
+            '15 seconds': 15,
+            '20 seconds': 20,
+            '25 seconds': 25,
+            '30 seconds': 30,
+            '35 seconds': 35,
+            '40 seconds': 40,
+            '45 seconds': 45,
+            '50 seconds': 50,
+            '55 seconds': 55,
+            '60 seconds': 60,
+            'disqualified': 1000,
+            'disqualifyed': 1000,
+            'under investigation': 2000
+        };
+
+        function getPenaltyNumericValue(penaltyStr) {
+            if (!penaltyStr) return 0;
+            const normalized = String(penaltyStr).trim().toLowerCase();
+            if (Object.prototype.hasOwnProperty.call(PENALTY_VALUE_MAP, normalized)) {
+                return PENALTY_VALUE_MAP[normalized];
+            }
+            // Fallback if a custom string like "12 Seconds" is ever stored
+            const match = normalized.match(/^(\d+)\s*seconds?$/);
+            return match ? parseInt(match[1], 10) : 0;
+        }
+
+        function formatPenaltySummary(totalSeconds) {
+            if (totalSeconds >= 2000) {
+                const remainder = totalSeconds - 2000;
+                return remainder > 0
+                    ? `Under Investigation + ${remainder}s (${totalSeconds})`
+                    : `Under Investigation (${totalSeconds})`;
+            }
+            if (totalSeconds >= 1000) {
+                const remainder = totalSeconds - 1000;
+                return remainder > 0
+                    ? `Disqualified + ${remainder}s (${totalSeconds})`
+                    : `Disqualified (${totalSeconds})`;
+            }
+            return `${totalSeconds} ${totalSeconds === 1 ? 'Second' : 'Seconds'}`;
+        }
+
         function getPenaltySummaryList() {
             const penalties = cachedIncidents.filter(inc => inc.status === 'Penalty Applied');
-            penalties.sort((a, b) => (a.driver_name || '').localeCompare(b.driver_name || ''));
-            return penalties;
+            const groupedMap = new Map();
+
+            penalties.forEach(inc => {
+                const rawName = (inc.driver_name || 'Unknown').trim() || 'Unknown';
+                const key = rawName.toLowerCase();
+                const points = getPenaltyNumericValue(inc.penalty);
+                const replayTime = (inc.session_time || '').trim();
+                const carNum = inc.car_number ?? '-';
+
+                if (!groupedMap.has(key)) {
+                    groupedMap.set(key, {
+                        driver_name: rawName,
+                        car_numbers: new Set(),
+                        total_seconds: 0,
+                        replay_times: []
+                    });
+                }
+
+                const entry = groupedMap.get(key);
+                if (carNum !== '-' && carNum !== '') {
+                    entry.car_numbers.add(String(carNum));
+                }
+                entry.total_seconds += points;
+                if (replayTime) {
+                    entry.replay_times.push(replayTime);
+                }
+            });
+
+            const summaryList = Array.from(groupedMap.values()).map(entry => ({
+                driver_name: entry.driver_name,
+                car_number: entry.car_numbers.size > 0 ? Array.from(entry.car_numbers).join(' / ') : '-',
+                total_seconds: entry.total_seconds,
+                penalty_display: formatPenaltySummary(entry.total_seconds),
+                replay_times_display: entry.replay_times.length > 0 ? entry.replay_times.join(' / ') : '-'
+            }));
+
+            summaryList.sort((a, b) => a.driver_name.localeCompare(b.driver_name));
+            return summaryList;
         }
 
         function showSummary() {
             const summaryCard = document.getElementById('summaryCard');
             const tbody = document.getElementById('summaryTableBody');
-            const penalties = getPenaltySummaryList();
+            const summaryList = getPenaltySummaryList();
 
-            if (penalties.length === 0) {
+            if (summaryList.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:1.5rem; color:var(--text-muted);">No drivers with status "Penalty Applied" in this session.</td></tr>';
             } else {
-                tbody.innerHTML = penalties.map(inc => `
+                tbody.innerHTML = summaryList.map(item => `
                     <tr>
-                        <td><strong>${escapeHtml(inc.driver_name || 'Unknown')}</strong></td>
-                        <td>${escapeHtml(inc.car_number ?? '-')}</td>
-                        <td>${escapeHtml(inc.penalty || '-')}</td>
-                        <td>${escapeHtml(inc.session_time || '-')}</td>
+                        <td><strong>${escapeHtml(item.driver_name)}</strong></td>
+                        <td>${escapeHtml(item.car_number)}</td>
+                        <td title="${item.total_seconds}s">${escapeHtml(item.penalty_display)}</td>
+                        <td>${escapeHtml(item.replay_times_display)}</td>
                     </tr>
                 `).join('');
             }
@@ -539,12 +622,11 @@
         function closeSummary() {
             document.getElementById('summaryCard').style.display = 'none';
         }
-        
-        // Export HTML
 
+        // Export HTML
         function exportSummaryHtml() {
-            const penalties = getPenaltySummaryList();
-            if (penalties.length === 0) {
+            const summaryList = getPenaltySummaryList();
+            if (summaryList.length === 0) {
                 return alert('No penalty records to export.');
             }
 
@@ -558,12 +640,12 @@
 
             const filename = `${slugifyDot(categoryName)}_Round-${slugifyDot(roundNum)}_${slugifyUnderscore(trackName)}_${formattedDate}.html`;
 
-            const rowsHtml = penalties.map(inc => `
+            const rowsHtml = summaryList.map(item => `
                 <tr>
-                    <td><strong>${escapeHtml(inc.driver_name || 'Unknown')}</strong></td>
-                    <td>#${escapeHtml(inc.car_number ?? '-')}</td>
-                    <td class="penalty">${escapeHtml(inc.penalty || '-')}</td>
-                    <td>${escapeHtml(inc.session_time || '-')}</td>
+                    <td><strong>${escapeHtml(item.driver_name)}</strong></td>
+                    <td>#${escapeHtml(item.car_number)}</td>
+                    <td class="penalty">${escapeHtml(item.penalty_display)}</td>
+                    <td>${escapeHtml(item.replay_times_display)}</td>
                 </tr>
             `).join('');
 
@@ -670,17 +752,14 @@
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
         }
-        
-        // Export CSV
-        
-        function exportSummaryCsv() {
-            const penalties = cachedIncidents.filter(inc => inc.status === 'Penalty Applied');
-            penalties.sort((a, b) => (a.driver_name || '').localeCompare(b.driver_name || ''));
 
-            if (penalties.length === 0) {
+        // Export CSV
+        function exportSummaryCsv() {
+            const summaryList = getPenaltySummaryList();
+            if (summaryList.length === 0) {
                 return alert('No penalty records to export.');
             }
-            
+
             const sessionObj = sessionsCache.find(s => s.id === currentSessionId) || {};
             const categoryObj = categoriesCache.find(c => c.id === sessionObj.category_id);
 
@@ -691,13 +770,14 @@
 
             const filename = `${slugifyDot(categoryName)}_Round-${slugifyDot(roundNum)}_${slugifyUnderscore(trackName)}_${formattedDate}.csv`;
 
-            let csvContent = 'driver_name,car_number,penalty,session_time\r\n';
-            penalties.forEach(inc => {
-                const driver = `"${(inc.driver_name || '').replace(/"/g, '""')}"`;
-                const carnum = `"${(inc.car_number || '')}"`;
-                const penalty = `"${(inc.penalty || '').replace(/"/g, '""')}"`;
-                const time = `"${(inc.session_time || '').replace(/"/g, '""')}"`;
-                csvContent += `${driver},${carnum},${penalty},${time}\r\n`;
+            let csvContent = 'driver_name,car_number,penalty_seconds,penalty,session_time\r\n';
+            summaryList.forEach(item => {
+                const driver = `"${item.driver_name.replace(/"/g, '""')}"`;
+                const carnum = `"${item.car_number.replace(/"/g, '""')}"`;
+                const secs = `"${item.total_seconds}"`;
+                const penalty = `"${item.penalty_display.replace(/"/g, '""')}"`;
+                const time = `"${item.replay_times_display.replace(/"/g, '""')}"`;
+                csvContent += `${driver},${carnum},${secs},${penalty},${time}\r\n`;
             });
 
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -708,6 +788,7 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         }
 
         // --- CATEGORY MANAGEMENT ---
