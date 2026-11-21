@@ -1350,7 +1350,6 @@
             if (error) {
                 alert('Error saving: ' + error.message);
             } else {
-                document.getElementById(`row-${id}`)?.classList.remove('row-edited');
                 showToast('Incident updated!');
                 const idx = cachedIncidents.findIndex(i => i.id === id);
                 if (idx !== -1) cachedIncidents[idx] = { ...cachedIncidents[idx], ...payload };
