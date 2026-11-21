@@ -61,6 +61,34 @@
         .btn-success { background: var(--accent-green); border-color: var(--accent-green); color: #052e16; }
         .btn-danger { background: rgba(225, 6, 0, 0.15); border-color: var(--accent-red); color: #ff8080; }
 
+        .swap-btn {
+            background: var(--bg-input);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 700;
+            padding: 0.2rem 0.45rem;
+            line-height: 1.2;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            transition: color 0.15s, border-color 0.15s, background 0.15s;
+        }
+        .swap-btn:hover {
+            color: var(--text-main);
+            border-color: var(--accent-blue);
+            background: #181e27;
+        }
+        .swap-divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0.3rem 0;
+        }
+
         .grid-top {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -177,12 +205,10 @@
         }
         .back-btn:hover { border-color: var(--text-muted); }
         
-				
-				::-webkit-scrollbar {width: 12px;}
-				::-webkit-scrollbar-track {background: var(--bg-dark);}
-				::-webkit-scrollbar-thumb {background: var(--bg-panel);}
-				::-webkit-scrollbar-thumb:hover {background: var(--border);}
-				
+        ::-webkit-scrollbar {width: 12px;}
+        ::-webkit-scrollbar-track {background: var(--bg-dark);}
+        ::-webkit-scrollbar-thumb {background: var(--bg-panel);}
+        ::-webkit-scrollbar-thumb:hover {background: var(--border);}
     </style>
 </head>
 <body>
@@ -193,10 +219,10 @@
             </div>
             
             <div style="display:inline-block; text-align:center; margin-bottom:14px;">
-				    <span style="font-size:12px;color:var(--accent-yellow);">Active Steward - </span>
-				    <span id="prousername" style="font-size:12px; color: var(--accent-primary);"></span>
-				    </div>
-				    
+                <span style="font-size:12px;color:var(--accent-yellow);">Active Steward - </span>
+                <span id="prousername" style="font-size:12px; color: var(--accent-primary);"></span>
+            </div>
+                
             <div class="header-actions">
                 <a href="index.html" target="_blank" class="btn">FrontEnd ↗</a>
                 <button onclick="logout()" class="btn btn-danger">Logout</button>
@@ -362,8 +388,9 @@
                         <tr>
                             <th style="width:76px;">Lap</th>
                             <th style="width:78px;">Time</th>
-                            <th style="width:200px;">Primary Car & Driver</th>
-                            <th style="width:200px;">Secondary Car & Driver</th>
+                            <th style="width:220px;">Primary Car &amp; Driver</th>
+                            <th style="width:52px; margin:0px 0px 0px 0px;">&nbsp;</th>
+                            <th style="width:220px;">Secondary Car &amp; Driver</th>
                             <th style="width:210px;">Reason / Offence</th>
                             <th style="width:180px;">Penalty</th>
                             <th>Steward Notes</th>
@@ -383,7 +410,7 @@
     <div id="toast" class="toast">Saved!</div>
 
     <script>
-    	  const SUPABASE_URL = '__SUPABASE_URL_PLACEHOLDER__';
+        const SUPABASE_URL = '__SUPABASE_URL_PLACEHOLDER__';
         const SUPABASE_ANON_KEY = '__SUPABASE_ANON_KEY_PLACEHOLDER__';
         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -514,7 +541,6 @@
             setTimeout(() => t.style.display = 'none', 2500);
         }
 
-        // --- SUMMARY & XML EXPORT LOGIC ---
         // --- PENALTY CONVERSION & SUMMARY AGGREGATION ---
         const PENALTY_VALUE_MAP = {
             'no further action': 0,
@@ -541,7 +567,6 @@
             if (Object.prototype.hasOwnProperty.call(PENALTY_VALUE_MAP, normalized)) {
                 return PENALTY_VALUE_MAP[normalized];
             }
-            // Fallback if a custom string like "12 Seconds" is ever stored
             const match = normalized.match(/^(\d+)\s*seconds?$/);
             return match ? parseInt(match[1], 10) : 0;
         }
@@ -657,97 +682,97 @@
             `).join('');
 
             const htmlContent = `<!DOCTYPE html>
-						<html lang="en">
-						<head>
-						    <meta charset="UTF-8">
-						    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-						    <title>Penalty Summary - ${escapeHtml(categoryName)}</title>
-						    <style>
-						        body {
-						            background: #0b0d10;
-						            color: #f3f4f6;
-						            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-						            padding: 2rem;
-						            margin: 0;
-						        }
-						        .wrap {
-						            max-width: 1000px;
-						            margin: 0 auto;
-						            background: #14181f;
-						            border: 1px solid #2a3241;
-						            border-top: 3px solid #e10600;
-						            border-radius: 8px;
-						            padding: 1.5rem 2rem;
-						        }
-						        h1 {
-						            margin: 0 0 0.5rem 0;
-						            font-size: 1.4rem;
-						            text-transform: uppercase;
-						            letter-spacing: 0.8px;
-						        }
-						        h1 span { color: #e10600; }
-						        .meta {
-						            color: #9ca3af;
-						            font-size: 0.9rem;
-						            margin-bottom: 1.5rem;
-						        }
-						        .meta span {
-						            color: #ECE706;
-						            font-weight: 600;
-						        }
-						        table {
-						            width: 100%;
-						            border-collapse: collapse;
-						            background: #0e1116;
-						            border-radius: 6px;
-						            overflow: hidden;
-						        }
-						        th {
-						            background: #101318;
-						            color: #9ca3af;
-						            font-size: 0.75rem;
-						            text-transform: uppercase;
-						            text-align: left;
-						            padding: 0.85rem 1rem;
-						            border-bottom: 1px solid #2a3241;
-						        }
-						        td {
-						            padding: 0.8rem 1rem;
-						            border-bottom: 1px solid #2a3241;
-						            font-size: 0.9rem;
-						        }
-						        tr:last-child td { border-bottom: none; }
-						        .penalty {
-						            color: #41BD22;
-						            font-weight: 700;
-						        }
-						    </style>
-								</head>
-								<body>
-								    <div class="wrap">
-								        <h1><span>//</span> Steward Penalty Summary</h1>
-								        <div class="meta">
-								            Championship: <span>${escapeHtml(categoryName)}</span> |
-								            Round: <span>${escapeHtml(roundNum)}</span> |
-								            Track: <span>${escapeHtml(trackName)}</span> |
-								            Date: <span>${escapeHtml(formattedDate)}</span>
-								        </div>
-								        <table>
-								            <thead>
-								                <tr>
-								                    <th>Driver Name</th>
-								                    <th>Car #</th>
-								                    <th>Penalty</th>
-								                    <th>Replay Time</th>
-								                </tr>
-								            </thead>
-								            <tbody>
-								                ${rowsHtml}
-								            </tbody>
-								        </table>
-								    </div>
-								</body>
-								</html>`;
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penalty Summary - ${escapeHtml(categoryName)}</title>
+    <style>
+        body {
+            background: #0b0d10;
+            color: #f3f4f6;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 2rem;
+            margin: 0;
+        }
+        .wrap {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #14181f;
+            border: 1px solid #2a3241;
+            border-top: 3px solid #e10600;
+            border-radius: 8px;
+            padding: 1.5rem 2rem;
+        }
+        h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.4rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+        h1 span { color: #e10600; }
+        .meta {
+            color: #9ca3af;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+        .meta span {
+            color: #ECE706;
+            font-weight: 600;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #0e1116;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        th {
+            background: #101318;
+            color: #9ca3af;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            text-align: left;
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid #2a3241;
+        }
+        td {
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid #2a3241;
+            font-size: 0.9rem;
+        }
+        tr:last-child td { border-bottom: none; }
+        .penalty {
+            color: #41BD22;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <h1><span>//</span> Steward Penalty Summary</h1>
+        <div class="meta">
+            Championship: <span>${escapeHtml(categoryName)}</span> |
+            Round: <span>${escapeHtml(roundNum)}</span> |
+            Track: <span>${escapeHtml(trackName)}</span> |
+            Date: <span>${escapeHtml(formattedDate)}</span>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Driver Name</th>
+                    <th>Car #</th>
+                    <th>Penalty</th>
+                    <th>Replay Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${rowsHtml}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>`;
 
             const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
@@ -1177,6 +1202,25 @@
             }
         }
 
+        function swapCars(id) {
+            const car1El = document.getElementById(`car1-${id}`);
+            const drv1El = document.getElementById(`drv1-${id}`);
+            const car2El = document.getElementById(`car2-${id}`);
+            const drv2El = document.getElementById(`drv2-${id}`);
+            if (!car1El || !drv1El || !car2El || !drv2El) return;
+
+            const tempCar = car1El.value;
+            const tempDrv = drv1El.value;
+
+            car1El.value = car2El.value;
+            drv1El.value = drv2El.value;
+
+            car2El.value = tempCar;
+            drv2El.value = tempDrv;
+
+            showToast('Swapped Primary & Secondary Car/Driver (click Save to store)');
+        }
+
         async function loadSessionIncidents(sessionId) {
             if (!sessionId) return;
 
@@ -1213,6 +1257,11 @@
                     <td>
                         <input type="number" id="car1-${inc.id}" placeholder="Car #" value="${inc.car_number ?? ''}" style="margin-bottom:4px;">
                         <input type="text" id="drv1-${inc.id}" placeholder="Driver Name" value="${escapeAttr(inc.driver_name)}">
+                    </td>
+                    <td>
+                    <div class="swap-divider">
+                        <button type="button" onclick="swapCars('${inc.id}')" class="swap-btn" title="Swap Primary &amp; Secondary Car &amp; Driver">&#11136;</button>
+                    </div>
                     </td>
                     <td>
                         <input type="number" id="car2-${inc.id}" placeholder="Car # (opt)" value="${inc.secondary_car_number ?? ''}" style="margin-bottom:4px;">
