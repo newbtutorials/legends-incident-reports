@@ -175,6 +175,11 @@
         }
         td { padding: 0.65rem; border-bottom: 1px solid var(--border); vertical-align: top; }
         td input, td select, td textarea { padding: 0.4rem 0.5rem; font-size: 0.85rem; }
+
+        tr.row-edited td {
+            background-color: #13211e;
+            transition: background-color 0.15s ease;
+        }
         
         .toast {
             position: fixed;
@@ -540,6 +545,25 @@
             t.style.display = 'block';
             setTimeout(() => t.style.display = 'none', 2500);
         }
+
+        // --- ROW EDIT HIGHLIGHTING ---
+        function handleIncidentFieldEdit(event) {
+            const el = event.target;
+            if (!el || !el.id) return;
+
+            const match = el.id.match(/^(reason|penalty|notes|status)-(.+)$/);
+            if (!match) return;
+
+            const incidentId = match[2];
+            const row = document.getElementById(`row-${incidentId}`);
+            if (row) {
+                row.classList.add('row-edited');
+            }
+        }
+
+        const incidentsBodyEl = document.getElementById('incidentsBody');
+        incidentsBodyEl.addEventListener('input', handleIncidentFieldEdit);
+        incidentsBodyEl.addEventListener('change', handleIncidentFieldEdit);
 
         // --- PENALTY CONVERSION & SUMMARY AGGREGATION ---
         const PENALTY_VALUE_MAP = {
@@ -1290,6 +1314,7 @@
                     <td>
                         <select id="status-${inc.id}">
                             <option value="Pending Review" ${inc.status === 'Pending Review' ? 'selected' : ''}>Pending Review</option>
+                            <option value="Racing Incident" ${inc.status === 'Racing Incident' ? 'selected' : ''}>Racing Incident</option>
                             <option value="Penalty Applied" ${inc.status === 'Penalty Applied' ? 'selected' : ''}>Penalty Applied</option>
                             <option value="No Further Action" ${inc.status === 'No Further Action' ? 'selected' : ''}>No Further Action</option>
                             <option value="Cleared" ${inc.status === 'Cleared' ? 'selected' : ''}>Cleared</option>
@@ -1325,6 +1350,7 @@
             if (error) {
                 alert('Error saving: ' + error.message);
             } else {
+                document.getElementById(`row-${id}`)?.classList.remove('row-edited');
                 showToast('Incident updated!');
                 const idx = cachedIncidents.findIndex(i => i.id === id);
                 if (idx !== -1) cachedIncidents[idx] = { ...cachedIncidents[idx], ...payload };
