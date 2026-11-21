@@ -28,6 +28,10 @@
             line-height: 1.5;
             padding: 1.5rem 1rem;
         }
+        ::-webkit-scrollbar {width: 12px;}
+				::-webkit-scrollbar-track {background: var(--bg-dark);}
+				::-webkit-scrollbar-thumb {background: var(--bg-panel);}
+				::-webkit-scrollbar-thumb:hover {background: var(--border);}
         .container { max-width: 1200px; margin: 0 auto; }
         header {
             border-bottom: 2px solid var(--accent-blue);
@@ -245,10 +249,10 @@
     
 
     <script>
-    	   const SUPABASE_URL = '__SUPABASE_URL_PLACEHOLDER__';
+    	  const SUPABASE_URL = '__SUPABASE_URL_PLACEHOLDER__';
         const SUPABASE_ANON_KEY = '__SUPABASE_ANON_KEY_PLACEHOLDER__';
         
-        
+       
         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
