@@ -432,6 +432,8 @@
                 return;
             }
 
+            const appealsEnabled = currentSessionObj?.enable_appeal !== false;
+
             const rows = incidents.map(inc => {
                 const statusClass = inc.status.includes('Penalty') ? 'status-Penalty' : 
                                     inc.status.includes('Pending') ? 'status-Pending' : 'status-NFA';
@@ -443,6 +445,10 @@
                 const sessionTimeDisplay = (inc.session_time && String(inc.session_time).trim())
                     ? String(inc.session_time).trim()
                     : 'Fixed Penalty';
+
+                const appealLinkHtml = appealsEnabled
+                    ? `<br><a href="https://docs.google.com/forms/d/e/1FAIpQLSdmuyQarbT36JNXS22IJqOqF6BEyIZ_thCXB9nUCXPIA8x18A/viewform" target="_blank" class="disputeBtn">Appeal This Verdict</a>`
+                    : '<span style="font-size:12px; color:var(--text-muted);"> &nbsp; Appeal Period Expired</span>';
 
                 return `
                     <tr>
@@ -460,7 +466,7 @@
                             ${inc.steward_notes ? `<div class="notes-text">${escapeHtml(inc.steward_notes)}</div>` : ''}
                         </td>
                         
-                        <td><span class="status-badge ${statusClass}">${escapeHtml(inc.status)}</span><br><a href="https://docs.google.com/forms/d/e/1FAIpQLSdmuyQarbT36JNXS22IJqOqF6BEyIZ_thCXB9nUCXPIA8x18A/viewform" target="_blank" class="disputeBtn">Appeal This Verdict</a></td>
+                        <td><span class="status-badge ${statusClass}">${escapeHtml(inc.status)}</span>${appealLinkHtml}</td>
                    
                     </tr>
                 `;
