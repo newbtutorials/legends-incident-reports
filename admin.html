@@ -25,6 +25,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             padding: 10px 10px 10px 10px;
         }
+        .hidden { display: none !important; }
         .container { max-width: 1600px; margin: 0 auto; }
         header {
             display: flex;
@@ -59,7 +60,24 @@
         .btn-primary:hover { background: #c20500; }
         .btn-success { background: var(--accent-green); border-color: var(--accent-green); color: #052e16; }
         .btn-danger { background: rgba(225, 6, 0, 0.15); border-color: var(--accent-red); color: #ff8080; }
-
+				
+				.btn-small-red {
+            background: var(--accent-red);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 5px 6px 4px 6px;
+            border-radius: 4px;
+            border-color: var(--accent-red);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .btn-small-red:hover { background: #c20500; }
+				
         .swap-btn {
             background: var(--bg-input);
             color: var(--text-muted);
@@ -101,12 +119,28 @@
             border: 1px solid var(--border);
             border-radius: 8px;
             padding: 1.5rem;
+            margin:10px 0px 0px 0px;
         }
-        .card h2 { font-size: 1.1rem; margin-bottom: 1rem; text-transform: uppercase; color: var(--text-muted); }
+        .card h2 { 
+        	font-size: 1.1rem; 
+        	margin-bottom: 1rem; 
+        	text-transform: uppercase; 
+        	color: var(--text-muted);
+        	border-bottom: 1px solid var(--border);
+        	}
+        	
+        	.category-bar h2 { 
+        	font-size: 1.1rem; 
+        	margin-bottom: 1rem; 
+        	text-transform: uppercase; 
+        	color: var(--text-muted);
+        	border-bottom: 1px solid var(--border);
+        	}
+        	
 
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
-        .form-group { margin-bottom: 1rem; }
-        label { display: block; font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.35rem; font-weight: 600; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0px; }
+        .form-group { margin-top: 8px; margin-bottom: 8px; }
+        label { display: block; font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0px; font-weight: 600; }
         input, select, textarea {
             width: 100%;
             background: var(--bg-input);
@@ -123,7 +157,7 @@
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            margin-bottom: 0.5rem;
+            margin-top:10px;
         }
         .checkbox-group input[type="checkbox"] {
             width: auto;
@@ -143,7 +177,7 @@
             border: 1px solid var(--border);
             border-radius: 8px;
             padding: 1.25rem 1.5rem;
-            margin-bottom: 1.5rem;
+            margin-top: 10px;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
@@ -228,6 +262,15 @@
         }
         .back-btn:hover { border-color: var(--text-muted); }
         
+        .header-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow-x: auto;
+            padding:7px 12px 10px 12px;
+            margin:0px 0px 0px 0px;
+        }
+        
         ::-webkit-scrollbar {width: 12px;}
         ::-webkit-scrollbar-track {background: var(--bg-dark);}
         ::-webkit-scrollbar-thumb {background: var(--bg-panel);}
@@ -237,7 +280,7 @@
 <body>
     <div class="container"> 	
 
-        <header id="pagetop">
+        <header id="pagetop" class="header-card">
         	
             <div>
             <h1><span>//</span> Steward Incident Manager - Admin</h1>
@@ -270,12 +313,17 @@
                     <span style="color: var(--text-muted); font-size: 0.85rem;">Loading categories...</span>
                 </div>
             </div>
+            <div>
+            	<button type="button" onclick="showUpload()" class="btn btn-success">Upload Results</button>
+            </div>
         </div>
 
-        <div class="grid-top">
+       <!-- <div class="grid-top"> -->
             <!-- Upload ACC JSON or Stewarding CSV -->
-            <div class="card">
+            <div class="card hidden" id="uploadCard">
                 <h2>Upload Session (JSON or CSV)</h2>
+                
+                <div class="form-row">
                 <div class="form-group">
                     <label>Championship / Category</label>
                     <select id="uploadCategorySelect">
@@ -287,6 +335,7 @@
                     <label>Session Date (Auto-filled from File or Editable)</label>
                     <input type="date" id="sessionDate">
                 </div>
+              </div>
           
                 <div class="form-row">
                     <div class="form-group">
@@ -316,15 +365,52 @@
                         <input type="file" id="csvIncidentFile" accept=".csv,text/csv">
                     </div>
                 </div>
-
-                <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
-                    <button type="button" onclick="processAndUploadJson()" class="btn btn-primary">Upload JSON</button>
-                    <button type="button" onclick="processAndUploadCsv()" class="btn btn-success">Upload CSV</button>
+                
+                <div class="form-row">
+                    <div class="form-group">
+			                    <button type="button" onclick="processAndUploadJson()" class="btn btn-primary">Upload JSON</button>
+		                </div>
+		                
+		                <div class="form-group">
+	                    <button type="button" onclick="processAndUploadCsv()" class="btn btn-success">Upload CSV</button>
+                    </div>
                 </div>
+                
+                <div class="form-group" style="text-align:right;">
+                	<button type="button" id="showEdit" onclick="closeUpload()" class="btn btn-primary">Cancel</button>
+                </div> 
             </div>
+            
+       
 
+       
+
+        <!-- Select Existing Sessions -->
+        <div class="card">
+            <h2>Select Incident Report</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Filter by Category</label>
+                    <select id="filterCategorySelect" onchange="filterSessionDropdown()">
+                        <option value="ALL">All Categories</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Uploaded Sessions</label>
+                    <select id="sessionSelect" onchange="onSessionSelectChange(this.value)">
+                        <option value="">-- Loading sessions --</option>
+                    </select>
+                </div>
+            	
+            </div>
+            <div class="form-group" style="text-align:right;">
+                	<button type="button" id="showEdit" onclick="showEdit()" class="btn-small-red">Edit Session Details</button>
+                </div>    
+        </div>
+        
+        
             <!-- Manage Existing Sessions -->
-            <div class="card">
+            <div class="card hidden" id="editCard">
                 <h2>Edit Session Details</h2>
                 <!-- Session Metadata Edit Form Fields -->
                 <div class="form-row">
@@ -334,24 +420,25 @@
                             <option value="">-- Uncategorized --</option>
                         </select>
                     </div>
-                </div>
-                <div class="form-row">
+              
                     <div class="form-group">
                         <label>Edit Track Name</label>
                         <select id="editTrackName">
                             <option value="">-- Select Track --</option>
                         </select>
                     </div>
+                </div>
+                <div class="form-row">
                     <div class="form-group">
                         <label>Edit Race Number</label>
                         <input type="number" id="editSessionType">
                     </div>
-                </div>
+              
                 <div class="form-group">
                     <label>Edit Session Date</label>
                     <input type="date" id="editSessionDate">
                 </div>
-                
+              </div>
                 <div class="form-group">
                     <label>ACC Replay File Link (Optional)</label>
                     <input type="text" id="editreplayLink" placeholder="https://drive.google.com/drive/folders/xyz..">
@@ -362,12 +449,20 @@
                     <label for="editEnableAppeal">Enable Appeal</label>
                 </div>
 
-                <div style="display:flex; gap:0.75rem; margin-top:1rem; flex-wrap:wrap;">
-                    <button onclick="saveSessionDetails()" class="btn btn-success">Save Session Details</button>
+                <div class="form-row">
+                    <div class="form-group">
+                    <button onclick="saveSessionDetails()" class="btn btn-success">Save Session Details</button> &nbsp; 
                     <button onclick="deleteCurrentSession()" class="btn btn-danger">Delete Session</button>
+                    </div>
+                    <div class="form-group" style="text-align:right;">
+                	<button type="button" onclick="closeEdit()" class="btn btn-primary">Cancel</button>
+                </div> 
                 </div>
+                
+                
             </div>
-        </div> <!-- End Grid top -->
+       <!-- </div> --> <!-- End Grid top -->
+       
             
         <!-- Summary Card (Appears above Select Incident Report when Show Summary is clicked) -->
         <div id="summaryCard" class="card" style="display: none; margin-bottom: 20px; border-color: var(--accent-blue);">
@@ -393,25 +488,6 @@
                         <tr><td colspan="4" style="text-align:center; padding:1.5rem; color:var(--text-muted);">No penalties applied.</td></tr>
                     </tbody>
                 </table>
-            </div>
-        </div>
-
-        <!-- Select Existing Sessions -->
-        <div class="card" style="padding-bottom:0px; margin-top:0px; margin-bottom:20px;">
-            <h2>Select Incident Report</h2>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Filter by Category</label>
-                    <select id="filterCategorySelect" onchange="filterSessionDropdown()">
-                        <option value="ALL">All Categories</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Uploaded Sessions</label>
-                    <select id="sessionSelect" onchange="onSessionSelectChange(this.value)">
-                        <option value="">-- Loading sessions --</option>
-                    </select>
-                </div>
             </div>
         </div>
 
@@ -455,7 +531,6 @@
     <script>
         const SUPABASE_URL = '__SUPABASE_URL_PLACEHOLDER__';
         const SUPABASE_ANON_KEY = '__SUPABASE_ANON_KEY_PLACEHOLDER__';
-        
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function verifyAuth() {
@@ -1621,7 +1696,7 @@
                 alert('Error saving: ' + error.message);
             } else {
                 const row = document.getElementById(`row-${id}`);
-                if (row) row.classList.remove('row-edited');
+                //if (row) row.classList.remove('row-edited');
                 showToast('Incident updated!');
                 const idx = cachedIncidents.findIndex(i => i.id === id);
                 if (idx !== -1) cachedIncidents[idx] = { ...cachedIncidents[idx], ...payload };
@@ -1689,6 +1764,19 @@
         function escapeHtml(str) {
             if (!str) return '';
             return String(str).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+        }
+        
+        function showEdit() {
+        document.getElementById('editCard').classList.remove('hidden');
+        }
+        function closeEdit() {
+        document.getElementById('editCard').classList.add('hidden');
+        }
+        function showUpload() {
+        document.getElementById('uploadCard').classList.remove('hidden');
+        }
+        function closeUpload() {
+        document.getElementById('uploadCard').classList.add('hidden');
         }
 
         async function init() {
