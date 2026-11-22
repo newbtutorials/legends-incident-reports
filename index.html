@@ -262,7 +262,6 @@
     	  const SUPABASE_URL = '__SUPABASE_URL_PLACEHOLDER__';
         const SUPABASE_ANON_KEY = '__SUPABASE_ANON_KEY_PLACEHOLDER__';
         
-        
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let categories = [];
@@ -441,10 +440,14 @@
                     ? `<div style="margin-top:3px; color:var(--text-muted); font-size:0.8rem;"><div style="padding-left:10px; margin-bottom:4px;">Vs</div> <span class="car-badge">#${inc.secondary_car_number ?? '?'}</span> ${escapeHtml(inc.secondary_driver_name || 'Unknown')}</div>` 
                     : '';
 
+                const sessionTimeDisplay = (inc.session_time && String(inc.session_time).trim())
+                    ? String(inc.session_time).trim()
+                    : 'Fixed Penalty';
+
                 return `
                     <tr>
-                        <td><strong>${escapeHtml(inc.session_time || '-')}</strong><div class="notes-text">Lap ${inc.lap ?? '-'}</div></td>
-                        
+                        <!-- <td><div class="notes-text">Lap ${inc.lap ?? '-'}</div><strong>${escapeHtml(sessionTimeDisplay)}</strong><div class="notes-text">Lap ${inc.lap ?? '-'}</div></td> -->
+                        <td>${escapeHtml(sessionTimeDisplay)}</td>
                         <td>
                             <div><span class="car-badge">#${inc.car_number ?? '?'}</span> <strong>${escapeHtml(inc.driver_name || 'Unknown')}</strong></div>
                             ${secondary}
@@ -467,7 +470,7 @@
                 <table>
                     <thead>
                         <tr>
-                            <th style="width:65px;">Time</th>
+                            <th style="width:75px;">Time</th>
                             <th style="width:240px;">Involved Drivers</th>
                             <th style="width:240px;">Incident / Offence</th>
                             <th>Penalties / Verdict</th>
