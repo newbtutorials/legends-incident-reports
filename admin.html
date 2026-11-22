@@ -220,7 +220,7 @@
     <div class="container">
         <header id="pagetop">
             <div><h1><span>//</span> Steward Incident Manager - Admin</h1>
-            <p class="subtitle">Official Incident Reports & Post-Race Decisions</p>
+            <p class="subtitle">Official Incident Reports &amp; Post-Race Decisions</p>
             </div>
             
             <div style="display:inline-block; text-align:center; margin-bottom:14px;">
@@ -252,9 +252,9 @@
         </div>
 
         <div class="grid-top">
-            <!-- Upload ACC JSON -->
+            <!-- Upload ACC JSON or Stewarding CSV -->
             <div class="card">
-                <h2>Upload ACC Race Control JSON</h2>
+                <h2>Upload Session (JSON or CSV)</h2>
                 <div class="form-group">
                     <label>Championship / Category</label>
                     <select id="uploadCategorySelect">
@@ -263,8 +263,8 @@
                 </div>
             
                 <div class="form-group">
-                    <label>Session Date (Race Date Auto-filled from JSON)</label>
-                    <input type="date" id="sessionDate" readonly>
+                    <label>Session Date (Auto-filled from File or Editable)</label>
+                    <input type="date" id="sessionDate">
                 </div>
           
                 <div class="form-row">
@@ -285,11 +285,21 @@
                     <input type="text" id="replayLink" placeholder="https://drive.google.com/drive/folders/xyz..">
                 </div>
                 
-                <div class="form-group">
-                    <label>Select ACC JSON File</label>
-                    <input type="file" id="jsonFile" accept=".json">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Select ACC JSON File</label>
+                        <input type="file" id="jsonFile" accept=".json">
+                    </div>
+                    <div class="form-group">
+                        <label>Select Stewarding CSV File</label>
+                        <input type="file" id="csvIncidentFile" accept=".csv,text/csv">
+                    </div>
                 </div>
-                <button onclick="processAndUploadJson()" class="btn btn-primary">Upload Session</button>
+
+                <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+                    <button type="button" onclick="processAndUploadJson()" class="btn btn-primary">Upload JSON</button>
+                    <button type="button" onclick="processAndUploadCsv()" class="btn btn-success">Upload CSV</button>
+                </div>
             </div>
 
             <!-- Manage Existing Sessions -->
@@ -381,11 +391,13 @@
 
         <!-- Incidents Editor Table -->
         <div class="card" style="padding:0; overflow:hidden;">
-            <div style="padding:1.25rem; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
-                <h2 style="margin:0;">Session Incidents & Steward Verdicts</h2>
-                <span><button onclick="addBlankIncident()" class="btn">+ Add Manual Incident</button></span>
-                <span><button id="showSummary" onclick="showSummary()" class="btn">Show Summary</button></span>
-                <span id="incidentCount" style="color:var(--text-muted); font-size:0.85rem;">0 incidents</span>
+            <div style="padding:1.25rem; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+                <h2 style="margin:0;">Session Incidents &amp; Steward Verdicts</h2>
+                <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+                    <button type="button" onclick="addBlankIncident()" class="btn">+ Add Manual Incident</button>
+                    <button type="button" id="showSummary" onclick="showSummary()" class="btn">Show Summary</button>
+                    <span id="incidentCount" style="color:var(--text-muted); font-size:0.85rem;">0 incidents</span>
+                </div>
             </div>
             <div class="table-wrap" style="border:none; border-radius:0;">
                 <table>
@@ -404,7 +416,7 @@
                         </tr>
                     </thead>
                     <tbody id="incidentsBody">
-                        <tr><td colspan="9" style="text-align:center; padding:2rem; color:var(--text-muted);">Select or upload a session to manage incidents.</td></tr>
+                        <tr><td colspan="10" style="text-align:center; padding:2rem; color:var(--text-muted);">Select or upload a session to manage incidents.</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -482,7 +494,8 @@
         const yyyy = today.getFullYear();
         const mm = String(today.getMonth() + 1).padStart(2, '0');
         const dd = String(today.getDate()).padStart(2, '0');
-        document.getElementById('sessionDate').value = `${yyyy}-${mm}-${dd}`;
+        const defaultDateStr = `${yyyy}-${mm}-${dd}`;
+        document.getElementById('sessionDate').value = defaultDateStr;
 
         let currentSessionId = null;
         let sessionsCache = [];
@@ -565,6 +578,228 @@
         incidentsBodyEl.addEventListener('input', handleIncidentFieldEdit);
         incidentsBodyEl.addEventListener('change', handleIncidentFieldEdit);
 
+        // --- CSV PARSING & SESSION UPLOAD TO stewarding_sessions + stewarding_incidents ---
+        function parseCsvRows(csvText) {
+            const rows = [];
+            let currentRow = [];
+            let currentField = '';
+            let inQuotes = false;
+
+            const normalized = csvText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+            for (let i = 0; i < normalized.length; i++) {
+                const ch = normalized[i];
+                const nextCh = normalized[i + 1];
+
+                if (inQuotes) {
+                    if (ch === '"' && nextCh === '"') {
+                        currentField += '"';
+                        i++;
+                    } else if (ch === '"') {
+                        inQuotes = false;
+                    } else {
+                        currentField += ch;
+                    }
+                } else {
+                    if (ch === '"') {
+                        inQuotes = true;
+                    } else if (ch === ',') {
+                        currentRow.push(currentField);
+                        currentField = '';
+                    } else if (ch === '\n') {
+                        currentRow.push(currentField);
+                        rows.push(currentRow);
+                        currentRow = [];
+                        currentField = '';
+                    } else {
+                        currentField += ch;
+                    }
+                }
+            }
+
+            if (currentField.length > 0 || currentRow.length > 0) {
+                currentRow.push(currentField);
+                rows.push(currentRow);
+            }
+
+            return rows;
+        }
+
+        function parseIntOrNull(val) {
+            if (val === null || val === undefined) return null;
+            const cleaned = String(val).trim().replace(/^#/, '');
+            if (!cleaned) return null;
+            const num = Number(cleaned);
+            if (!Number.isFinite(num)) return null;
+            return Math.trunc(num);
+        }
+
+        function cleanDriverText(val) {
+            if (!val) return '';
+            return String(val)
+                .split('\n')
+                .map(part => part.trim())
+                .filter(Boolean)
+                .join(' / ');
+        }
+
+        function formatPenaltyFromCsvSeconds(rawSeconds, numericSeconds) {
+            if (Number.isFinite(numericSeconds)) {
+                if (numericSeconds === 0) return 'No Further Action';
+                if (numericSeconds === 1000) return 'Disqualified';
+                if (numericSeconds === 2000) return 'Under Investigation';
+                return `${numericSeconds} Seconds`;
+            }
+
+            const trimmed = String(rawSeconds || '').trim();
+            return trimmed || 'No Further Action';
+        }
+
+        function extractDateFromFilenameOrFile(file) {
+            if (!file) return defaultDateStr;
+            const isoMatch = file.name.match(/(\d{4})[-_](\d{2})[-_](\d{2})/);
+            if (isoMatch) {
+                return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+            }
+            const dmyMatch = file.name.match(/\b(\d{1,2})[-_](\d{1,2})[-_](\d{2,4})\b/);
+            if (dmyMatch) {
+                const day = String(dmyMatch[1]).padStart(2, '0');
+                const month = String(dmyMatch[2]).padStart(2, '0');
+                let year = dmyMatch[3];
+                if (year.length === 2) year = `20${year}`;
+                return `${year}-${month}-${day}`;
+            }
+            if (file.lastModified) {
+                return new Date(file.lastModified).toISOString().split('T')[0];
+            }
+            return defaultDateStr;
+        }
+
+        document.getElementById('csvIncidentFile').addEventListener('change', (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            document.getElementById('sessionDate').value = extractDateFromFilenameOrFile(file);
+        });
+
+        async function processAndUploadCsv() {
+            const fileInput = document.getElementById('csvIncidentFile');
+            if (!fileInput.files.length) return alert('Please select a CSV file first.');
+
+            const categoryId = document.getElementById('uploadCategorySelect').value || null;
+            const trackName = document.getElementById('trackName').value.trim() || 'Unknown Track';
+            const sessionType = document.getElementById('sessionType').value.trim() || 'Race';
+            const sessionDate = document.getElementById('sessionDate').value || defaultDateStr;
+            const replayLink = document.getElementById('replayLink').value.trim() || null;
+
+            try {
+                const text = await fileInput.files[0].text();
+                const parsedRows = parseCsvRows(text);
+
+                if (parsedRows.length < 2) {
+                    return alert('CSV file appears to be empty or missing a header row.');
+                }
+
+                const headers = parsedRows[0].map(h => h.replace(/^\uFEFF/, '').trim());
+                const colIndex = {};
+                headers.forEach((h, idx) => {
+                    colIndex[h.toLowerCase()] = idx;
+                });
+
+                const getCol = (row, ...names) => {
+                    for (const name of names) {
+                        const idx = colIndex[name.toLowerCase()];
+                        if (idx !== undefined && idx < row.length) {
+                            return row[idx];
+                        }
+                    }
+                    return '';
+                };
+
+                let skippedZeroCount = 0;
+                let skippedBlankPerpCount = 0;
+                const incidentDrafts = [];
+
+                for (let r = 1; r < parsedRows.length; r++) {
+                    const row = parsedRows[r];
+                    const hasAnyValue = row.some(cell => String(cell || '').trim() !== '');
+                    if (!hasAnyValue) continue;
+
+                    const driverName = cleanDriverText(getCol(row, 'Driver_Perpetrator', 'driver_perpetrator'));
+                    if (!driverName) {
+                        skippedBlankPerpCount++;
+                        continue;
+                    }
+
+                    const rawSecondsStr = String(getCol(row, 'seconds') || '').trim();
+                    const numericSeconds = rawSecondsStr !== '' ? Number(rawSecondsStr) : NaN;
+
+                    // Ignore rows where seconds = 0 (or blank seconds)
+                    if (rawSecondsStr === '' || (Number.isFinite(numericSeconds) && numericSeconds === 0)) {
+                        skippedZeroCount++;
+                        continue;
+                    }
+
+                    const carNumber = parseIntOrNull(getCol(row, 'car'));
+                    const penaltyValue = formatPenaltyFromCsvSeconds(rawSecondsStr, numericSeconds);
+                    const stewardNotes = String(getCol(row, 'description') || '').trim();
+                    const sessionTime = String(getCol(row, 'time') || '').trim();
+                    const secondaryCarNumber = parseIntOrNull(getCol(row, 'victim_car'));
+                    const secondaryDriverName = cleanDriverText(getCol(row, 'Driver_Victim', 'driver_victim'));
+                    const offenceReason = String(getCol(row, 'reason') || '').trim();
+
+                    incidentDrafts.push({
+                        lap: null,
+                        session_time: sessionTime,
+                        car_number: carNumber,
+                        driver_name: driverName,
+                        secondary_car_number: secondaryCarNumber,
+                        secondary_driver_name: secondaryDriverName,
+                        reason: offenceReason || (secondaryCarNumber ? `Contact / Incident with Car #${secondaryCarNumber}` : 'Single car incident / off-track'),
+                        penalty: penaltyValue,
+                        steward_notes: stewardNotes,
+                        status: Number.isFinite(numericSeconds) && numericSeconds > 0 ? 'Penalty Applied' : 'Pending Review'
+                    });
+                }
+
+                if (incidentDrafts.length === 0) {
+                    return alert(`No valid incident rows to import (${skippedZeroCount} with 0s skipped, ${skippedBlankPerpCount} with blank Driver_Perpetrator skipped).`);
+                }
+
+                const { data: sessionData, error: sessionErr } = await supabaseClient
+                    .from('stewarding_sessions')
+                    .insert([{
+                        category_id: categoryId,
+                        track_name: trackName,
+                        session_type: sessionType,
+                        session_date: sessionDate,
+                        replay_link: replayLink
+                    }])
+                    .select()
+                    .single();
+
+                if (sessionErr) throw sessionErr;
+
+                const recordsToInsert = incidentDrafts.map(item => ({
+                    ...item,
+                    session_id: sessionData.id
+                }));
+
+                const { error: incErr } = await supabaseClient
+                    .from('stewarding_incidents')
+                    .insert(recordsToInsert);
+
+                if (incErr) throw incErr;
+
+                showToast(`Imported ${recordsToInsert.length} incident(s) (${skippedZeroCount} 0s, ${skippedBlankPerpCount} blank perpetrator skipped)`);
+                fileInput.value = '';
+                document.getElementById('filterCategorySelect').value = 'ALL';
+                await loadSessionsList(sessionData.id);
+            } catch (err) {
+                alert('CSV upload failed: ' + err.message);
+                console.error(err);
+            }
+        }
+
         // --- PENALTY CONVERSION & SUMMARY AGGREGATION ---
         const PENALTY_VALUE_MAP = {
             'no further action': 0,
@@ -580,8 +815,9 @@
             '50 seconds': 50,
             '55 seconds': 55,
             '60 seconds': 60,
+            '70 seconds': 70,
+            '80 seconds': 80,
             'disqualified': 1000,
-            'disqualifyed': 1000,
             'under investigation': 2000
         };
 
@@ -1162,7 +1398,7 @@
                 document.getElementById('editSessionDate').value = '';
                 document.getElementById('editreplayLink').value = '';
                 document.getElementById('editSessionCategory').value = '';
-                document.getElementById('incidentsBody').innerHTML = '<tr><td colspan="9" style="text-align:center; padding:2rem; color:var(--text-muted);">No sessions available for this category.</td></tr>';
+                document.getElementById('incidentsBody').innerHTML = '<tr><td colspan="10" style="text-align:center; padding:2rem; color:var(--text-muted);">No sessions available for this category.</td></tr>';
                 document.getElementById('incidentCount').textContent = '0 incidents';
                 cachedIncidents = [];
                 closeSummary();
@@ -1242,6 +1478,9 @@
             car2El.value = tempCar;
             drv2El.value = tempDrv;
 
+            const row = document.getElementById(`row-${id}`);
+            if (row) row.classList.add('row-edited');
+
             showToast('Swapped Primary & Secondary Car/Driver (click Save to store)');
         }
 
@@ -1270,7 +1509,7 @@
             const tbody = document.getElementById('incidentsBody');
 
             if (cachedIncidents.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:2rem; color:var(--text-muted);">No incidents in this session. Click "+ Add Manual Incident" above to add one.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:2rem; color:var(--text-muted);">No incidents in this session. Click "+ Add Manual Incident" above to add one.</td></tr>';
                 return;
             }
 
@@ -1291,9 +1530,9 @@
                         <input type="number" id="car2-${inc.id}" placeholder="Car # (opt)" value="${inc.secondary_car_number ?? ''}" style="margin-bottom:4px;">
                         <input type="text" id="drv2-${inc.id}" placeholder="Driver 2 (opt)" value="${escapeAttr(inc.secondary_driver_name)}">
                     </td>
-                    <td><textarea id="reason-${inc.id}" rows="3">${escapeAttr(inc.reason)}</textarea></td>
+                    <td><textarea id="reason-${inc.id}" rows="3">${escapeHtml(inc.reason)}</textarea></td>
                     <td><select id="penalty-${inc.id}">
-                            <option value="${escapeAttr(inc.penalty)}">${escapeAttr(inc.penalty)}</option>
+                            <option value="${escapeAttr(inc.penalty)}">${escapeHtml(inc.penalty)}</option>
                             <option value="No Further Action">No Further Action</option>
                             <option value="5 Seconds">5 Seconds</option>
                             <option value="10 Seconds">10 Seconds</option>
@@ -1307,6 +1546,8 @@
                             <option value="50 Seconds">50 Seconds</option>
                             <option value="55 Seconds">55 Seconds</option>
                             <option value="60 Seconds">60 Seconds</option>
+                            <option value="70 Seconds">70 Seconds</option>
+                            <option value="80 Seconds">80 Seconds</option>
                             <option value="Disqualified">Disqualified</option>
                             <option value="Under Investigation">Under Investigation</option>
                     </select></td>
@@ -1350,6 +1591,8 @@
             if (error) {
                 alert('Error saving: ' + error.message);
             } else {
+                const row = document.getElementById(`row-${id}`);
+                if (row) row.classList.remove('row-edited');
                 showToast('Incident updated!');
                 const idx = cachedIncidents.findIndex(i => i.id === id);
                 if (idx !== -1) cachedIncidents[idx] = { ...cachedIncidents[idx], ...payload };
