@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scottish Legends - Incident Reports</title>
+    <title id="pageTitle">Team Name - Incident Reports</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -186,7 +186,7 @@
             align-items: center;
             gap: 0.4rem;
         }
-        .disputeBtn:hover { border-color: var(--text-muted);
+        .disputeBtn:hover { color: var(--text-main);border-color: var(--text-muted);
         }
         .pillBtn {
             background: var(--bg-dark);
@@ -222,10 +222,10 @@
     	
         <header id="pagetop"  class="section-card">
             <div>
-                <h1><span>//</span> Scottish Legends - Incident Reports</h1>
-                <p class="subtitle">Official Incident Reports & Post-Race Decisions</p>
+                <div id="teamName"></div>
+                <div id="teamSubtitle"></div>
             </div>
-            <div><a href="https://www.scottish-legends.com" target="_blank">Visit www.scottish-legends.com</a></div>
+            <div id="teamLink"></div>
         </header>
 
         <!-- Cascading Category & Session Controls -->
@@ -274,6 +274,8 @@
                 supabaseClient.from('stewarding_categories').select('*').order('name', { ascending: true }),
                 supabaseClient.from('stewarding_sessions').select('*').order('category_id', { ascending: true }).order('session_type', { ascending: true })
             ]);
+            
+      
 
             if (sessRes.error) {
                 document.getElementById('incidentsContainer').innerHTML = `<div class="empty-state">Error loading sessions: ${sessRes.error.message}</div>`;
@@ -286,6 +288,37 @@
             populateCategoryDropdown();
             onCategoryChange();
         }
+        
+        // read stewarding config
+		    async function loadConfig() {
+		        try {
+		            const { data, error } = await supabaseClient
+		                .from('stewarding_config')
+		                .select('*')
+		                .limit(1)
+		                .single();
+
+		            if (error) {
+		                console.warn('No configuration found in config table:', error.message);
+		                return;
+		            }
+
+		            if (data) {
+		            	
+		           
+                appealLink = data.appeal_link || 'https://www.appeal.com';
+		             
+		            document.getElementById('pageTitle').innerHTML = `${data.page_title}`;
+		            document.getElementById('teamLink').innerHTML = `<a href="https://${data.team_link}" target="_blank">Visit ${data.team_link}</a>`;
+		            document.getElementById('teamName').innerHTML = `<h1><span>//</span> ${data.team_name}</h1>`;
+		            document.getElementById('teamSubtitle').innerHTML = `<p class="subtitle">${data.team_subtitle}</p>`;
+		                
+   
+		            }
+		        } catch (err) {
+		            console.error('Error loading site configuration:', err);
+		        }
+		    }
         
         
 
@@ -426,6 +459,7 @@
 
         function renderIncidents(incidents) {
             const container = document.getElementById('incidentsContainer');
+            const showappealLink = appealLink;
 
             if (!incidents || incidents.length === 0) {
                 container.innerHTML = `<div class="empty-state">No matching incidents found.</div>`;
@@ -447,7 +481,7 @@
                     : 'Fixed Penalty';
 
                 const appealLinkHtml = appealsEnabled
-                    ? `<br><a href="https://docs.google.com/forms/d/e/1FAIpQLSdmuyQarbT36JNXS22IJqOqF6BEyIZ_thCXB9nUCXPIA8x18A/viewform" target="_blank" class="disputeBtn">Appeal This Verdict</a>`
+                    ? `<br><a href="${showappealLink}" target="_blank" class="disputeBtn">Appeal This Verdict</a>`
                     : '<span style="font-size:12px; color:var(--text-muted);"> &nbsp; Appeal Period Expired</span>';
 
                 return `
@@ -500,6 +534,7 @@
         }
 
         init();
+        loadConfig();
     </script>
 </body>
 </html>

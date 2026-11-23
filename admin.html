@@ -61,13 +61,11 @@
         .btn-success { background: var(--accent-green); border-color: var(--accent-green); color: #052e16; }
         .btn-danger { background: rgba(225, 6, 0, 0.15); border-color: var(--accent-red); color: #ff8080; }
 				
-				.btn-small-red {
-            background: var(--accent-red);
-            color: var(--text-main);
+				.btn-small {
             border: 1px solid var(--border);
             padding: 5px 6px 4px 6px;
             border-radius: 4px;
-            border-color: var(--accent-red);
+            
             cursor: pointer;
             font-weight: 600;
             font-size: 0.85rem;
@@ -76,7 +74,19 @@
             align-items: center;
             gap: 0.4rem;
         }
-        .btn-small-red:hover { background: #c20500; }
+        .btn-small-red { background: var(--accent-red); color: var(--text-main); }
+        .btn-small-red:hover { background: var(--accent-red); border-color: var(--text-main);}
+        
+        .btn-small-green { background: var(--accent-green); color: var(--text-main); }
+        .btn-small-green:hover { background: var(--accent-green); border-color: var(--text-main);}
+        
+        .btn-small-blue { background: var(--accent-blue); color: var(--text-main); }
+        .btn-small-blue:hover { background: var(--accent-blue); border-color: var(--text-main);}
+        
+        .btn-small-yellow { background: var(--accent-yellow); color: var(--text-main); }
+        .btn-small-yellow:hover { background: var(--accent-yellow); border-color: var(--text-main);}
+        
+        
 				
         .swap-btn {
             background: var(--bg-input);
@@ -270,7 +280,11 @@
             padding:7px 12px 10px 12px;
             margin:0px 0px 0px 0px;
         }
-        
+        .status-msg {
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 14px;
+        }
         ::-webkit-scrollbar {width: 12px;}
         ::-webkit-scrollbar-track {background: var(--bg-dark);}
         ::-webkit-scrollbar-thumb {background: var(--bg-panel);}
@@ -281,7 +295,6 @@
     <div class="container"> 	
 
         <header id="pagetop" class="header-card">
-        	
             <div>
             <h1><span>//</span> Steward Incident Manager - Admin</h1>
             <p class="subtitle">Official Incident Report Manager</p>
@@ -293,11 +306,18 @@
             </div>
                 
             <div class="header-actions">
-                <a href="index.html" target="_blank" class="btn">FrontEnd ↗</a>
-                <button onclick="logout()" class="btn btn-danger">Logout</button>
+                <a href="index.html" target="_blank" class="btn">Front Page ↗</a>
             </div>
         </header>
-
+        
+      <div class="header-card" style="margin-top:10px; text-align:right;">
+      	<button onclick="showUpload()" class="btn-small btn-small-green">Upload Results</button>
+      	<button onclick="showConfig()" class="btn-small btn-small-blue">Configuration</button>
+      	<button onclick="logout()" class="btn-small btn-small-red">Logout</button>
+      </div>
+      
+      
+      
         <!-- Categories Management Section -->
         <div class="category-bar">
             <div style="flex: 1; min-width: 280px;">
@@ -313,14 +333,62 @@
                     <span style="color: var(--text-muted); font-size: 0.85rem;">Loading categories...</span>
                 </div>
             </div>
-            <div>
-            	<button type="button" onclick="showUpload()" class="btn btn-success">Upload Results</button>
-            </div>
+          
         </div>
+        
+          <!-- Edit Configuration Details -->
+            <div class="card hidden" id="configCard" style="border-color: var(--accent-blue);">
+                <h2>Edit Config Settings</h2>
+                
+             
+                <div class="form-row">
+                    <div class="form-group">
+                    <label>Team Name</label>
+                    <input type="text" id="teamName" placeholder="Your TeamName Here">
+                    </div>
+                    
+                    <div class="form-group">
+                    <label>Team Subtitle</label>
+                    <input type="text" id="teamSubtitle" placeholder="Team Subtitle Here">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                    <label>Team Link</label>
+                    <input type="text" id="teamLink" placeholder="www.teamname.com">
+                    </div>
+                    
+                    <div class="form-group">
+                    <label>Appeal Link</label>
+                    <input type="text" id="appealLink" placeholder="https://www.teamname.com/appeal.html">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                    <label>Web Page Title</label>
+                    <input type="text" id="pageTitle" placeholder="Team Name - Incident Reports">
+                    </div>
+                    
+                    
+                </div>
+                
+
+                <div class="form-row">
+                    <div class="form-group">
+                    <button id="saveConfigBtn" class="btn btn-success">Save Config</button>
+                    </div>
+                    <div class="form-group" style="text-align:right;">
+                	  <button type="button" onclick="closeConfig()" class="btn btn-primary">Close</button>
+                    </div> 
+                </div>
+                <div id="configStatus" class="status-msg"></div>       
+            </div>
 
        <!-- <div class="grid-top"> -->
             <!-- Upload ACC JSON or Stewarding CSV -->
-            <div class="card hidden" id="uploadCard">
+            <div class="card hidden" id="uploadCard" style="border-color: var(--accent-blue);">
                 <h2>Upload Session (JSON or CSV)</h2>
                 
                 <div class="form-row">
@@ -377,7 +445,7 @@
                 </div>
                 
                 <div class="form-group" style="text-align:right;">
-                	<button type="button" id="showEdit" onclick="closeUpload()" class="btn btn-primary">Cancel</button>
+                	<button type="button" id="showEdit" onclick="closeUpload()" class="btn btn-primary">Close</button>
                 </div> 
             </div>
             
@@ -404,13 +472,13 @@
             	
             </div>
             <div class="form-group" style="text-align:right;">
-                	<button type="button" id="showEdit" onclick="showEdit()" class="btn-small-red">Edit Session Details</button>
+                	<button type="button" id="showEdit" onclick="showEdit()" class="btn-small btn-small-red">Edit Session Details</button>
                 </div>    
         </div>
         
         
             <!-- Manage Existing Sessions -->
-            <div class="card hidden" id="editCard">
+            <div class="card hidden" id="editCard" style="border-color: var(--accent-blue);">
                 <h2>Edit Session Details</h2>
                 <!-- Session Metadata Edit Form Fields -->
                 <div class="form-row">
@@ -455,7 +523,7 @@
                     <button onclick="deleteCurrentSession()" class="btn btn-danger">Delete Session</button>
                     </div>
                     <div class="form-group" style="text-align:right;">
-                	<button type="button" onclick="closeEdit()" class="btn btn-primary">Cancel</button>
+                	<button type="button" onclick="closeEdit()" class="btn btn-primary">Close</button>
                 </div> 
                 </div>
                 
@@ -490,6 +558,7 @@
                 </table>
             </div>
         </div>
+        
 
         <!-- Incidents Editor Table -->
         <div class="card" style="padding:0; overflow:hidden;">
@@ -550,6 +619,92 @@
             'Silverstone': 'Silverstone', 'Snetterton': 'Snetterton', 'Spa-Francorchamps': 'Spa-Francorchamps',
             'Suzuka': 'Suzuka', 'Valencia': 'Valencia', 'Watkins Glen': 'Watkins Glen', 'Zandvoort': 'Zandvoort', 'Zolder': 'Zolder', 'Imola': 'Imola'
         };
+        
+       // read stewarding config
+		    async function loadConfig() {
+		        try {
+		            const { data, error } = await supabaseClient
+		                .from('stewarding_config')
+		                .select('*')
+		                .limit(1)
+		                .single();
+
+		            if (error) {
+		                console.warn('No configuration found in config table:', error.message);
+		                return;
+		            }
+
+		            if (data) {
+		            	
+		            	  document.getElementById('teamName').value = data.team_name || '';
+		            	  document.getElementById('teamSubtitle').value = data.team_subtitle || '';
+		            	  document.getElementById('teamLink').value = data.team_link || '';
+		            	  document.getElementById('appealLink').value = data.appeal_link || '';
+		            	  document.getElementById('pageTitle').value = data.page_title || '';
+   
+		            }
+		        } catch (err) {
+		            console.error('Error loading site configuration:', err);
+		        }
+		    }
+		    
+		    // SAVE CONFIG
+		    document.getElementById('saveConfigBtn').addEventListener('click', async () => {
+		    	
+            const teamname = document.getElementById('teamName').value.trim();
+            const teamsubtitle = document.getElementById('teamSubtitle').value.trim();
+            const teamlink = document.getElementById('teamLink').value.trim();
+            const appeallink = document.getElementById('appealLink').value.trim();
+            const pagetitle = document.getElementById('pageTitle').value.trim();
+
+            const statusDiv = document.getElementById('configStatus');
+
+            statusDiv.style.color = '#e2e8f0';
+            statusDiv.innerText = 'Saving configuration...';
+
+            try {
+                const { data: existingData, error: fetchError } = await supabaseClient
+                    .from('stewarding_config')
+                    .select('id')
+                    .limit(1);
+
+                if (fetchError) throw fetchError;
+
+                let error;
+                const payload = {
+                    team_name: teamname,
+                    team_subtitle: teamsubtitle,
+                    team_link: teamlink,
+                    appeal_link: appeallink,
+                    page_title: pagetitle
+                };
+
+                if (existingData && existingData.length > 0) {
+                    const rowId = existingData[0].id;
+                    const res = await supabaseClient
+                        .from('stewarding_config')
+                        .update(payload)
+                        .eq('id', rowId);
+                    error = res.error;
+                } else {
+                    const res = await supabaseClient
+                        .from('stewarding_config')
+                        .insert([payload]);
+                    error = res.error;
+                }
+
+                if (error) throw error;
+
+                
+
+                statusDiv.style.color = '#68d391';
+                statusDiv.innerText = 'Configuration saved successfully!';
+                loadConfig();
+            } catch (err) {
+                statusDiv.style.color = '#fc8181';
+                statusDiv.innerText = 'Error saving configuration: ' + err.message;
+            }
+        });
 
         // Helper: Converts YYYY-MM-DD (DB format) to DD-MM-YYYY for display & filenames
         function formatDateForDisplay(dateStr) {
@@ -1778,8 +1933,15 @@
         function closeUpload() {
         document.getElementById('uploadCard').classList.add('hidden');
         }
+        function showConfig() {
+        document.getElementById('configCard').classList.remove('hidden');
+        }
+        function closeConfig() {
+        document.getElementById('configCard').classList.add('hidden');
+        }
 
         async function init() {
+        	  await loadConfig();
             await loadCategories();
             populateTrackDropdowns();
             await loadSessionsList();
